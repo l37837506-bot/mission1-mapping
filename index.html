@@ -4,21 +4,279 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#3b82f6">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#eaf0fb">
   <meta name="apple-mobile-web-app-title" content="극한환경 탐사">
   <title>극한환경 탐사 미션 · 정찰 매핑</title>
   <style>
+    :root {
+      --text:        #17233b;
+      --text-dim:    #4a5a75;
+      --text-faint:  #6b7c96;
+      --accent:      #0e7490;
+      --danger:      #dc2626;
+
+      --glass-hi:    rgba(255, 255, 255, 0.62);
+      --glass-lo:    rgba(255, 255, 255, 0.30);
+      --edge:        rgba(255, 255, 255, 0.78);
+      --edge-soft:   rgba(255, 255, 255, 0.52);
+      --shadow:      0 10px 34px rgba(49, 73, 122, 0.13);
+      --shadow-lg:   0 26px 66px rgba(38, 60, 105, 0.24);
+
+      --radius: 20px;
+      --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+      --ease: cubic-bezier(.22, 1, .36, 1);
+    }
+
     * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif; background: #f3f4f6; overscroll-behavior: none; }
-    #root { min-height: 100vh; }
-    input[type="number"] { font-size: 16px !important; }
-    .loading { padding: 60px 20px; text-align: center; color: #6b7280; }
-    .loading-spinner { display: inline-block; width: 40px; height: 40px; border: 4px solid #e5e7eb; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 12px; }
+
+    html { background: #dfe9fb; }   /* 스크롤 바운스 시 노출되는 캔버스 색 */
+    body {
+      margin: 0; padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard', sans-serif;
+      color: var(--text);
+      background: transparent;   /* 불투명하면 아래 .bg 레이어를 덮어버린다 */
+      overscroll-behavior: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- 배경: 부드러운 파스텔 그라데이션 ---------- */
+    .bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: linear-gradient(165deg, #dfe9fb 0%, #d9e4f7 40%, #e4e2f6 72%, #f0e6f3 100%); }
+    .blob { position: absolute; border-radius: 50%; filter: blur(64px); opacity: 0.78; will-change: transform; }
+    .blob-a { width: 62vmax; height: 62vmax; top: -22vmax; left: -14vmax; background: radial-gradient(circle, #38bdf8, transparent 68%); animation: drift-a 34s ease-in-out infinite; }
+    .blob-b { width: 54vmax; height: 54vmax; top: -12vmax; right: -18vmax; background: radial-gradient(circle, #a78bfa, transparent 68%); animation: drift-b 42s ease-in-out infinite; }
+    .blob-c { width: 58vmax; height: 58vmax; bottom: -26vmax; left: 10vmax; background: radial-gradient(circle, #f9a8d4, transparent 68%); animation: drift-c 38s ease-in-out infinite; }
+    .blob-d { width: 44vmax; height: 44vmax; bottom: -16vmax; right: -10vmax; background: radial-gradient(circle, #5eead4, transparent 68%); opacity: 0.6; animation: drift-a 46s ease-in-out infinite reverse; }
+
+    @keyframes drift-a { 0%,100% { transform: none; } 50% { transform: translate3d(4%, 5%, 0) scale(1.08); } }
+    @keyframes drift-b { 0%,100% { transform: none; } 50% { transform: translate3d(-5%, 6%, 0) scale(1.10); } }
+    @keyframes drift-c { 0%,100% { transform: none; } 50% { transform: translate3d(5%, -4%, 0) scale(1.06); } }
+
+    #root { min-height: 100vh; position: relative; z-index: 1; }
+
+    /* ---------- 유리 표면 ---------- */
+    .glass {
+      background: linear-gradient(150deg, var(--glass-hi), var(--glass-lo));
+      border: 1px solid var(--edge);
+      border-radius: var(--radius);
+      -webkit-backdrop-filter: blur(26px) saturate(180%);
+      backdrop-filter: blur(26px) saturate(180%);
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+    .glass-strong {
+      background: linear-gradient(150deg, rgba(255,255,255,0.80), rgba(255,255,255,0.56));
+      border: 1px solid rgba(255, 255, 255, 0.92);
+      border-radius: 24px;
+      -webkit-backdrop-filter: blur(34px) saturate(190%);
+      backdrop-filter: blur(34px) saturate(190%);
+      box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 1);
+    }
+    /* backdrop-filter 미지원 시 불투명도를 올려 가독성 확보 */
+    @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+      .glass        { background: rgba(255, 255, 255, 0.86); }
+      .glass-strong { background: rgba(255, 255, 255, 0.96); }
+    }
+
+    /* ---------- 타이포 ---------- */
+    h1, h2, h3 { margin: 0; letter-spacing: -0.015em; }
+    .eyebrow {
+      font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--accent); font-weight: 600;
+    }
+    .dim   { color: var(--text-dim); }
+    .faint { color: var(--text-faint); }
+    .mono  { font-family: var(--mono); }
+
+    /* ---------- 터치 리플 ---------- */
+    .ripple { position: relative; overflow: hidden; }
+    .ripple-wave {
+      position: absolute; border-radius: 50%;
+      background: currentColor; opacity: 0.26;
+      transform: scale(0); pointer-events: none;
+      animation: rippleOut 0.62s var(--ease) forwards;
+    }
+    @keyframes rippleOut { to { transform: scale(2.4); opacity: 0; } }
+
+    /* ---------- 버튼 ---------- */
+    button { font-family: inherit; color: inherit; cursor: pointer; transition: transform .16s var(--ease), background .2s, border-color .2s, box-shadow .2s; }
+    button:active:not(:disabled) { transform: scale(0.96); }
+    button:disabled { cursor: default; }
+
+    .btn-glass {
+      background: linear-gradient(150deg, rgba(255,255,255,0.72), rgba(255,255,255,0.42));
+      border: 1px solid var(--edge);
+      border-radius: 14px;
+      -webkit-backdrop-filter: blur(16px) saturate(170%); backdrop-filter: blur(16px) saturate(170%);
+      box-shadow: 0 4px 14px rgba(49, 73, 122, 0.10), inset 0 1px 0 rgba(255,255,255,0.9);
+      padding: 10px 15px; font-size: 13px; font-weight: 600; color: var(--text-dim);
+    }
+    .btn-glass:hover:not(:disabled) { background: rgba(255,255,255,0.82); color: var(--text); }
+
+    .btn-primary {
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 15px;
+      background: linear-gradient(135deg, #38bdf8, #6366f1);
+      box-shadow: 0 10px 26px rgba(79, 110, 220, 0.34), inset 0 1px 0 rgba(255,255,255,0.42);
+      color: #fff; font-weight: 700;
+    }
+    .btn-primary:hover:not(:disabled) { box-shadow: 0 14px 32px rgba(79, 110, 220, 0.44), inset 0 1px 0 rgba(255,255,255,0.42); }
+    .btn-primary:disabled { opacity: 0.6; box-shadow: none; }
+
+    /* 팀 타일 */
+    .team-tile {
+      padding: 24px 12px; border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      background: linear-gradient(155deg, var(--team), var(--team-deep));
+      box-shadow: 0 10px 24px var(--team-glow), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+      font-size: 23px; font-weight: 800; color: #fff;
+      font-family: var(--mono);
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.22);
+    }
+    .team-tile::after {
+      content: ''; position: absolute; left: 0; right: 0; top: 0; height: 46%;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.42), transparent);
+      pointer-events: none;
+    }
+    .team-tile:hover { transform: translateY(-3px); box-shadow: 0 16px 32px var(--team-glow), inset 0 1px 0 rgba(255,255,255,0.55); }
+    .team-tile:active { transform: scale(0.95); }
+
+    /* 칩 */
+    .chip {
+      padding: 7px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;
+      border: 1px solid var(--edge-soft);
+      background: rgba(255, 255, 255, 0.48);
+      -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+      color: var(--text-dim);
+    }
+    .chip:hover { background: rgba(255, 255, 255, 0.75); }
+    .chip-on {
+      color: #fff; border-color: transparent;
+      background: linear-gradient(135deg, #38bdf8, #6366f1);
+      box-shadow: 0 5px 15px rgba(79, 110, 220, 0.32);
+    }
+
+    /* 세그먼트 탭 */
+    .seg {
+      flex: 1; padding: 13px 10px; border-radius: 15px; font-size: 13px; font-weight: 600;
+      border: 1px solid var(--edge-soft);
+      background: rgba(255, 255, 255, 0.46);
+      -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+      color: var(--text-dim);
+    }
+    .seg:hover { background: rgba(255, 255, 255, 0.72); }
+    .seg-on {
+      color: #fff; border-color: transparent;
+      background: linear-gradient(135deg, #38bdf8, #6366f1);
+      box-shadow: 0 8px 22px rgba(79, 110, 220, 0.34), inset 0 1px 0 rgba(255,255,255,0.4);
+    }
+
+    /* ---------- 입력 ---------- */
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block; margin-bottom: 6px; font-size: 12px; font-weight: 700;
+      letter-spacing: 0.01em; color: var(--text-dim);
+    }
+    .field input[type="number"] {
+      width: 100%; padding: 13px 15px;
+      font-size: 16px !important;   /* iOS 자동 확대 방지 */
+      font-family: var(--mono); font-weight: 600;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.62);
+      border: 1px solid var(--edge-soft);
+      border-radius: 14px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    .field input::placeholder { color: #9aa8bd; font-weight: 400; }
+    .field input:focus {
+      border-color: #60a5fa;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.20);
+    }
+
+    .check {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 15px; border-radius: 15px; cursor: pointer;
+      border: 1px solid var(--edge-soft);
+      background: rgba(255, 255, 255, 0.46);
+      font-size: 15px; font-weight: 500;
+      transition: background .2s, border-color .2s, box-shadow .2s, transform .16s var(--ease);
+    }
+    .check:active { transform: scale(0.98); }
+    .check input { width: 20px; height: 20px; accent-color: #4f46e5; margin: 0; flex-shrink: 0; }
+    .check-on {
+      border-color: rgba(99, 102, 241, 0.5);
+      background: rgba(224, 231, 255, 0.78);
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.18);
+    }
+
+    /* ---------- 진행 바 ---------- */
+    .progress {
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid var(--edge-soft);
+      border-radius: 999px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 999px; position: relative; overflow: hidden;
+      transition: width .6s var(--ease);
+    }
+    /* 광택은 진행률이 있을 때만 — 0%에서 도는 애니메이션은 낭비다 */
+    .progress-fill.on::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,0.75) 50%, transparent 80%);
+      animation: sheen 2.6s ease-in-out infinite;
+    }
+    @keyframes sheen { 0% { transform: translateX(-120%); } 60%, 100% { transform: translateX(220%); } }
+
+    /* ---------- 로딩 ---------- */
+    .loading { padding: 96px 20px; text-align: center; color: var(--text-dim); font-size: 14px; }
+    .loading-spinner {
+      display: inline-block; width: 44px; height: 44px; margin-bottom: 16px;
+      border: 3px solid rgba(99, 102, 241, 0.18);
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 0.85s linear infinite;
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .conn-indicator { position: fixed; top: 6px; right: 6px; padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; z-index: 200; }
-    .conn-ok { background: #dcfce7; color: #166534; }
-    .conn-err { background: #fee2e2; color: #991b1b; }
+
+    /* ---------- 연결 표시 ---------- */
+    .conn-indicator {
+      position: fixed; top: 10px; right: 10px; z-index: 200;
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 13px; border-radius: 999px;
+      font-size: 11px; font-weight: 700;
+      border: 1px solid var(--edge);
+      -webkit-backdrop-filter: blur(18px) saturate(180%); backdrop-filter: blur(18px) saturate(180%);
+      box-shadow: 0 5px 18px rgba(49, 73, 122, 0.14);
+      animation: rise .4s var(--ease) both;
+    }
+    .conn-ok  { background: rgba(209, 250, 229, 0.72); color: #047857; }
+    .conn-err { background: rgba(254, 226, 226, 0.78); color: #b91c1c; }
+    .conn-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .conn-ok .conn-dot { animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.8); } }
+
+    /* ---------- 등장 애니메이션 ---------- */
+    @keyframes rise  { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes pop   { from { opacity: 0; transform: scale(0.86); }     to { opacity: 1; transform: none; } }
+    @keyframes zoomIn{ from { opacity: 0; transform: scale(0.94) translateY(12px); } to { opacity: 1; transform: none; } }
+    @keyframes fadeIn{ from { opacity: 0; } to { opacity: 1; } }
+
+    .rise   { animation: rise .5s var(--ease) both; }
+    .pop    { animation: pop .42s var(--ease) both; }
+    .zoom   { animation: zoomIn .38s var(--ease) both; }
+    .fade   { animation: fadeIn .28s ease both; }
+
+    /* SVG 핀 등장 (stagger) */
+    .pin { animation: pop .44s var(--ease) both; transition: transform .18s var(--ease); transform-box: fill-box; transform-origin: center; }
+    .pin:active { transform: scale(0.9); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .rise, .pop, .zoom, .fade, .pin, .conn-indicator { animation: none !important; }
+      .blob { animation: none !important; }
+      .progress-fill::after { animation: none; }
+      .progress-fill { transition: none; }
+    }
   </style>
 
   <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
@@ -26,6 +284,13 @@
   <script src="https://unpkg.com/@babel/standalone@7.29.8/babel.min.js"></script>
 </head>
 <body>
+  <div class="bg">
+    <div class="blob blob-a"></div>
+    <div class="blob blob-b"></div>
+    <div class="blob blob-c"></div>
+    <div class="blob blob-d"></div>
+  </div>
+
   <div id="root">
     <div class="loading">
       <div class="loading-spinner"></div>
@@ -41,16 +306,43 @@
     const DB_PATH = 'mission1_v1';
     const POLL_INTERVAL = 3000;  // 3초마다 데이터 갱신
 
+    const EMPTY_PIN = '#cbd5e1';                  // 히트맵에서 값 없는 구역
+    const WHITE_PIN = 'rgba(255,255,255,0.95)';   // 미입력 구역
+    const DARK_LABEL_ON = [EMPTY_PIN, '#eab308']; // 밝은 핀 위에는 어두운 글자
+
     // ============ 도면 ============
     const CleanFloorPlan = () => (
       <g>
-        <circle cx="450" cy="450" r="438" fill="#f8fafc" stroke="#111827" strokeWidth="4" />
-        <rect x="440" y="42" width="96" height="120" rx="14" fill="#050505" />
-        <rect x="365" y="108" width="106" height="247" rx="18" fill="#050505" />
-        <rect x="160" y="286" width="690" height="114" rx="18" fill="#050505" />
-        <path d="M270 366 C252 430 250 520 247 615 C244 700 239 760 282 801 C312 829 357 823 389 790 C427 751 446 709 492 688 C533 670 586 688 619 661 C660 628 659 586 635 540 L562 398 C506 369 410 356 333 357 C303 358 282 361 270 366 Z" fill="#050505" />
-        <ellipse cx="432" cy="493" rx="157" ry="43" transform="rotate(41 432 493)" fill="#f8fafc" />
-        <ellipse cx="349" cy="689" rx="39" ry="70" transform="rotate(19 349 689)" fill="#f8fafc" />
+        <defs>
+          <linearGradient id="corridorGrad" x1="0" y1="0" x2="0.35" y2="1">
+            <stop offset="0%"   stopColor="#3b4c6b" />
+            <stop offset="100%" stopColor="#233149" />
+          </linearGradient>
+          <radialGradient id="paperGlow" cx="50%" cy="38%" r="64%">
+            <stop offset="0%"   stopColor="rgba(255,255,255,0.92)" />
+            <stop offset="100%" stopColor="rgba(226,238,252,0.55)" />
+          </radialGradient>
+        </defs>
+
+        {/* 건물 외곽 — 유리판 위의 종이처럼 */}
+        <circle cx="450" cy="450" r="438" fill="url(#paperGlow)" stroke="rgba(255,255,255,0.9)" strokeWidth="3" />
+        <circle cx="450" cy="450" r="438" fill="none" stroke="rgba(43,58,85,0.22)" strokeWidth="1.5" />
+        <circle cx="450" cy="450" r="422" fill="none" stroke="rgba(43,58,85,0.09)" strokeWidth="1" />
+
+        {/* 주행 가능 복도 */}
+        <g fill="url(#corridorGrad)">
+          <rect x="440" y="42" width="96" height="120" rx="14" />
+          <rect x="365" y="108" width="106" height="247" rx="18" />
+          <rect x="160" y="286" width="690" height="114" rx="18" />
+          <path d="M270 366 C252 430 250 520 247 615 C244 700 239 760 282 801 C312 829 357 823 389 790 C427 751 446 709 492 688 C533 670 586 688 619 661 C660 628 659 586 635 540 L562 398 C506 369 410 356 333 357 C303 358 282 361 270 366 Z" />
+        </g>
+
+        {/* 비사용 공간 (복도에서 도려냄) — 도형마다 그라데이션이 따로 잡히면
+            금속처럼 번들거려서 평평한 색으로 채운다 */}
+        <g fill="#f4f7fd" stroke="rgba(43,58,85,0.16)" strokeWidth="1">
+          <ellipse cx="432" cy="493" rx="157" ry="43" transform="rotate(41 432 493)" />
+          <ellipse cx="349" cy="689" rx="39" ry="70" transform="rotate(19 349 689)" />
+        </g>
       </g>
     );
 
@@ -71,11 +363,11 @@
     ];
 
     const TEAMS = [
-      { id: 1, name: '1팀', color: '#fbbf24' },
-      { id: 2, name: '2팀', color: '#fb923c' },
-      { id: 3, name: '3팀', color: '#a855f7' },
-      { id: 4, name: '4팀', color: '#3b82f6' },
-      { id: 5, name: '5팀', color: '#22c55e' },
+      { id: 1, name: '1팀', color: '#fbbf24', deep: '#f59e0b' },
+      { id: 2, name: '2팀', color: '#fb923c', deep: '#ea580c' },
+      { id: 3, name: '3팀', color: '#a855f7', deep: '#7c3aed' },
+      { id: 4, name: '4팀', color: '#3b82f6', deep: '#2563eb' },
+      { id: 5, name: '5팀', color: '#22c55e', deep: '#16a34a' },
     ];
 
     // ============ Firebase REST API 헬퍼 ============
@@ -138,50 +430,58 @@
               if (v !== undefined && v !== '') values.push(parseFloat(v));
             });
           }
-          if (values.length === 0) return '#d1d5db';
+          if (values.length === 0) return EMPTY_PIN;
           const avg = values.reduce((a, b) => a + b, 0) / values.length;
-          return getRadiationColor(avg) || '#d1d5db';
+          return getRadiationColor(avg) || EMPTY_PIN;
         }
         const filled = teamId && zoneData[teamId]?.[zone.code]?.radiation;
-        return filled ? zone.color : 'white';
+        return filled ? zone.color : WHITE_PIN;
       };
       const zoneWithBridge = (code) => TEAMS.some(t => zoneData[t.id]?.[code]?.bridge);
       const zoneWithCapsule = (code) => TEAMS.some(t => zoneData[t.id]?.[code]?.capsule);
       return (
-        <svg viewBox="0 0 900 900" style={{ width: '100%', maxWidth: '780px', height: 'auto', display: 'block' }}>
+        <svg viewBox="0 0 900 900" style={{ width: '100%', maxWidth: '780px', height: 'auto', display: 'block', margin: '0 auto' }}>
           <CleanFloorPlan />
-          {ZONES.map(zone => {
+          {ZONES.map((zone, i) => {
             const isSelected = selectedZone === zone.code;
             const filled = teamId && zoneData[teamId]?.[zone.code]?.radiation;
             const pinFill = getPinFill(zone);
             const r = isSelected ? 20 : 18;
             const hasBridge = landmarksMode && zoneWithBridge(zone.code);
             const hasCapsule = landmarksMode && zoneWithCapsule(zone.code);
+            const labelFill = pinFill === WHITE_PIN ? zone.color
+                            : DARK_LABEL_ON.includes(pinFill) ? '#334155' : '#fff';
             return (
-              <g key={zone.code} style={{ cursor: onZoneClick ? 'pointer' : 'default' }} onClick={() => onZoneClick && onZoneClick(zone.code)}>
-                <ellipse cx={zone.x + 2} cy={zone.y + 4} rx={r + 2} ry={(r + 2) * 0.35} fill="rgba(0,0,0,0.35)" />
-                <circle cx={zone.x} cy={zone.y} r={r + 4} fill={isSelected ? '#000' : 'white'} />
+              <g key={zone.code} className="pin" style={{ cursor: onZoneClick ? 'pointer' : 'default', animationDelay: `${i * 35}ms` }}
+                 onClick={() => onZoneClick && onZoneClick(zone.code)}>
+                {/* 선택 시 확산 링 */}
+                {isSelected && <circle cx={zone.x} cy={zone.y} r={r + 13} fill="none" stroke="#6366f1" strokeWidth="2.5" opacity="0.55" />}
+                {/* 핀 받침 그림자 */}
+                <ellipse cx={zone.x + 1} cy={zone.y + 6} rx={r + 2} ry={(r + 2) * 0.3} fill="rgba(23,35,59,0.28)" />
+                {/* 유리 링 */}
+                <circle cx={zone.x} cy={zone.y} r={r + 6} fill="rgba(255,255,255,0.72)" stroke="rgba(255,255,255,0.95)" strokeWidth="1.5" />
                 <circle cx={zone.x} cy={zone.y} r={r} fill={pinFill} stroke={zone.color} strokeWidth="3" />
+                {/* 상단 유리 반사 */}
+                <ellipse cx={zone.x} cy={zone.y - r * 0.44} rx={r * 0.58} ry={r * 0.28} fill="rgba(255,255,255,0.38)" style={{ pointerEvents: 'none' }} />
                 <text x={zone.x} y={zone.y + 6} textAnchor="middle" fontSize="15" fontWeight="bold"
-                      fill={filled || (heatmapMode && pinFill !== '#d1d5db') ? 'white' : zone.color}
-                      style={{ pointerEvents: 'none' }}>
+                      fill={labelFill} style={{ pointerEvents: 'none' }}>
                   {zone.code}
                 </text>
                 {filled && !heatmapMode && !landmarksMode && (
                   <g style={{ pointerEvents: 'none' }}>
-                    <circle cx={zone.x + r * 0.7} cy={zone.y - r * 0.7} r="11" fill="#10b981" stroke="white" strokeWidth="2" />
+                    <circle cx={zone.x + r * 0.7} cy={zone.y - r * 0.7} r="11" fill="#10b981" stroke="#fff" strokeWidth="2.5" />
                     <text x={zone.x + r * 0.7} y={zone.y - r * 0.7 + 4} textAnchor="middle" fontSize="14" fill="white" fontWeight="bold">✓</text>
                   </g>
                 )}
                 {hasBridge && (
                   <g style={{ pointerEvents: 'none' }}>
-                    <circle cx={zone.x - r * 0.7} cy={zone.y - r * 0.8} r="15" fill="#1f2937" stroke="white" strokeWidth="2.5" />
+                    <circle cx={zone.x - r * 0.7} cy={zone.y - r * 0.8} r="15" fill="#1f2937" stroke="#fff" strokeWidth="2.5" />
                     <text x={zone.x - r * 0.7} y={zone.y - r * 0.8 + 5} textAnchor="middle" fontSize="14">🌉</text>
                   </g>
                 )}
                 {hasCapsule && (
                   <g style={{ pointerEvents: 'none' }}>
-                    <circle cx={zone.x + r * 0.7} cy={zone.y - r * 0.8} r="15" fill="#fbbf24" stroke="white" strokeWidth="2.5" />
+                    <circle cx={zone.x + r * 0.7} cy={zone.y - r * 0.8} r="15" fill="#fbbf24" stroke="#fff" strokeWidth="2.5" />
                     <text x={zone.x + r * 0.7} y={zone.y - r * 0.8 + 5} textAnchor="middle" fontSize="14">💊</text>
                   </g>
                 )}
@@ -215,46 +515,52 @@
       };
 
       return (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '16px' }}>
-          <div style={{ background: 'white', padding: '24px', borderRadius: '16px', maxWidth: '400px', width: '100%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
-              <div style={{ width: '54px', height: '54px', borderRadius: '50%', background: zoneInfo.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 'bold', color: 'white', marginRight: '12px' }}>{zone}</div>
+        <div className="fade" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+             style={{ position: 'fixed', inset: 0, background: 'rgba(120, 140, 180, 0.32)', WebkitBackdropFilter: 'blur(14px)', backdropFilter: 'blur(14px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '16px' }}>
+          <div className="glass-strong zoom" style={{ padding: '24px', maxWidth: '420px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px' }}>
+              <div className="mono" style={{ width: '58px', height: '58px', flexShrink: 0, borderRadius: '19px', background: `linear-gradient(150deg, ${zoneInfo.color}, ${zoneInfo.color}bb)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '19px', fontWeight: 800, color: 'white', boxShadow: `0 10px 24px ${zoneInfo.color}55, inset 0 1px 0 rgba(255,255,255,0.5)` }}>{zone}</div>
               <div>
-                <h2 style={{ margin: 0, fontSize: '18px' }}>구역 {zone}</h2>
-                <p style={{ margin: 0, color: '#6b7280', fontSize: '13px' }}>{zoneInfo.desc}</p>
+                <div className="eyebrow" style={{ marginBottom: '3px' }}>Zone Record</div>
+                <h2 style={{ fontSize: '19px' }}>구역 {zone}</h2>
+                <p className="faint" style={{ margin: '2px 0 0', fontSize: '12.5px' }}>{zoneInfo.desc}</p>
               </div>
             </div>
+
             {zoneInfo.unstable && (
-              <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: '8px', padding: '8px 12px', marginBottom: '16px', fontSize: '13px', color: '#92400e' }}>
+              <div style={{ background: 'rgba(254, 243, 199, 0.8)', border: '1px solid rgba(245, 158, 11, 0.45)', borderRadius: '13px', padding: '11px 14px', marginBottom: '16px', fontSize: '12.5px', color: '#92400e', fontWeight: 500 }}>
                 ⚠ 통신 불안정 구역 — FPV 화면이 흔들릴 수 있음
               </div>
             )}
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', color: '#374151', fontWeight: '500' }}>방사선량 (mSv/h)</label>
-              <input type="number" step="0.1" value={radiation} onChange={(e) => setRadiation(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} placeholder="예: 3.5" />
+
+            <div className="field">
+              <label>방사선량 (mSv/h)</label>
+              <input type="number" step="0.1" value={radiation} onChange={(e) => setRadiation(e.target.value)} placeholder="예: 3.5" />
             </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', color: '#374151', fontWeight: '500' }}>온도 (°C)</label>
-              <input type="number" value={temp} onChange={(e) => setTemp(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} placeholder="예: 45" />
+            <div className="field">
+              <label>온도 (°C)</label>
+              <input type="number" value={temp} onChange={(e) => setTemp(e.target.value)} placeholder="예: 45" />
             </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', color: '#374151', fontWeight: '500' }}>습도 (%)</label>
-              <input type="number" value={humidity} onChange={(e) => setHumidity(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px' }} placeholder="예: 60" />
+            <div className="field">
+              <label>습도 (%)</label>
+              <input type="number" value={humidity} onChange={(e) => setHumidity(e.target.value)} placeholder="예: 60" />
             </div>
-            <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '14px', marginTop: '4px' }}>
-              <p style={{ margin: '0 0 10px 0', fontSize: '12px', color: '#6b7280', fontWeight: '500' }}>이 구역에서 발견한 것 (해당 시 체크)</p>
-              <label style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', padding: '10px 12px', background: bridge ? '#dbeafe' : '#f3f4f6', borderRadius: '8px', cursor: 'pointer', border: bridge ? '1px solid #3b82f6' : '1px solid transparent' }}>
-                <input type="checkbox" checked={bridge} onChange={(e) => setBridge(e.target.checked)} style={{ marginRight: '12px', transform: 'scale(1.3)' }} />
-                <span style={{ fontSize: '15px' }}>🌉 교량 발견</span>
+
+            <div style={{ borderTop: '1px solid var(--edge-soft)', paddingTop: '16px', marginTop: '6px' }}>
+              <p className="faint" style={{ margin: '0 0 11px', fontSize: '11.5px', fontWeight: 700 }}>이 구역에서 발견한 것 (해당 시 체크)</p>
+              <label className={bridge ? 'check check-on ripple' : 'check ripple'} style={{ marginBottom: '9px' }}>
+                <input type="checkbox" checked={bridge} onChange={(e) => setBridge(e.target.checked)} />
+                <span>🌉 교량 발견</span>
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', padding: '10px 12px', background: capsule ? '#fef3c7' : '#f3f4f6', borderRadius: '8px', cursor: 'pointer', border: capsule ? '1px solid #f59e0b' : '1px solid transparent' }}>
-                <input type="checkbox" checked={capsule} onChange={(e) => setCapsule(e.target.checked)} style={{ marginRight: '12px', transform: 'scale(1.3)' }} />
-                <span style={{ fontSize: '15px' }}>💊 캡슐 발견</span>
+              <label className={capsule ? 'check check-on ripple' : 'check ripple'}>
+                <input type="checkbox" checked={capsule} onChange={(e) => setCapsule(e.target.checked)} />
+                <span>💊 캡슐 발견</span>
               </label>
             </div>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-              <button onClick={onClose} disabled={saving} style={{ flex: 1, padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '14px' }}>취소</button>
-              <button onClick={handleSave} disabled={saving} style={{ flex: 2, padding: '12px', border: 'none', borderRadius: '6px', background: saving ? '#93c5fd' : '#3b82f6', color: 'white', cursor: saving ? 'wait' : 'pointer', fontSize: '14px', fontWeight: 'bold' }}>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '22px' }}>
+              <button className="btn-glass ripple" onClick={onClose} disabled={saving} style={{ flex: 1, padding: '14px' }}>취소</button>
+              <button className="btn-primary ripple" onClick={handleSave} disabled={saving} style={{ flex: 2, padding: '14px', fontSize: '14px' }}>
                 {saving ? '저장 중...' : '저장'}
               </button>
             </div>
@@ -269,23 +575,32 @@
       const team = TEAMS.find(t => t.id === teamId);
       const teamData = data[teamId] || {};
       const completedCount = Object.keys(teamData).length;
+      const pct = (completedCount / ZONES.length) * 100;
       return (
-        <div style={{ padding: '16px', maxWidth: '820px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px', gap: '12px' }}>
-            <button onClick={onBack} style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', background: 'white', cursor: 'pointer' }}>← 팀 선택</button>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: team.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'white' }}>{teamId}</div>
-            <div style={{ flex: 1 }}>
-              <h2 style={{ margin: 0, fontSize: '18px' }}>{team.name} · 정찰 기록</h2>
-              <p style={{ margin: 0, color: '#6b7280', fontSize: '13px' }}>진행: {completedCount} / {ZONES.length} 구역</p>
+        <div style={{ padding: '18px 16px 36px', maxWidth: '840px', margin: '0 auto' }}>
+          <div className="glass rise" style={{ padding: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button className="btn-glass ripple" onClick={onBack} style={{ flexShrink: 0, padding: '10px 13px' }}>←</button>
+              <div className="mono" style={{ width: '46px', height: '46px', flexShrink: 0, borderRadius: '15px', background: `linear-gradient(150deg, ${team.color}, ${team.deep})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '18px', color: 'white', boxShadow: `0 8px 20px ${team.color}66, inset 0 1px 0 rgba(255,255,255,0.5)` }}>{teamId}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="eyebrow">Recon Log</div>
+                <h2 style={{ fontSize: '17px' }}>{team.name} · 정찰 기록</h2>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0, lineHeight: 1.1 }}>
+                <span className="mono" style={{ fontSize: '25px', fontWeight: 800, color: team.deep }}>{completedCount}</span>
+                <span className="faint mono" style={{ fontSize: '13px' }}> / {ZONES.length}</span>
+              </div>
+            </div>
+            <div className="progress" style={{ height: '9px', marginTop: '14px' }}>
+              <div className={pct > 0 ? 'progress-fill on' : 'progress-fill'} style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${team.color}, ${team.deep})` }} />
             </div>
           </div>
-          <div style={{ background: '#e5e7eb', height: '8px', borderRadius: '4px', marginBottom: '16px', overflow: 'hidden' }}>
-            <div style={{ width: `${(completedCount / ZONES.length) * 100}%`, height: '100%', background: team.color, transition: 'width 0.3s' }} />
+
+          <div className="glass rise" style={{ padding: '14px', marginTop: '14px', animationDelay: '.08s' }}>
+            <p className="faint" style={{ margin: '0 0 10px', fontSize: '12.5px', textAlign: 'center', fontWeight: 500 }}>구역 핀을 탭하여 데이터 입력</p>
+            <FloorMap zoneData={data} onZoneClick={setSelectedZone} teamId={teamId} selectedZone={selectedZone} />
           </div>
-          <div style={{ background: 'white', padding: '12px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-            <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#6b7280', textAlign: 'center' }}>구역 핀을 탭하여 데이터 입력</p>
-            <FloorMap zoneData={data} onZoneClick={setSelectedZone} teamId={teamId} />
-          </div>
+
           {selectedZone && (
             <InputForm zone={selectedZone} currentData={teamData[selectedZone]}
               onSave={(inputData) => onSave(teamId, selectedZone, inputData)}
@@ -299,62 +614,71 @@
     const AdminView = ({ data, onBack }) => {
       const [mode, setMode] = useState('heatmap');
       const [selectedTeam, setSelectedTeam] = useState(null);
+      const HEAT = ['#22c55e', '#eab308', '#f97316', '#ef4444', '#7f1d1d'];
       return (
-        <div style={{ padding: '16px', maxWidth: '820px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px', gap: '12px' }}>
-            <button onClick={onBack} style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', background: 'white', cursor: 'pointer' }}>← 팀 선택</button>
-            <h2 style={{ margin: 0, fontSize: '18px', flex: 1 }}>강사 · 결과 화면</h2>
+        <div style={{ padding: '18px 16px 36px', maxWidth: '840px', margin: '0 auto' }}>
+          <div className="rise" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+            <button className="btn-glass ripple" onClick={onBack} style={{ padding: '10px 13px' }}>←</button>
+            <div>
+              <div className="eyebrow">Control Room</div>
+              <h2 style={{ fontSize: '19px' }}>강사 · 결과 화면</h2>
+            </div>
           </div>
-          <div style={{ background: 'white', padding: '16px', borderRadius: '12px', marginBottom: '16px' }}>
-            <h3 style={{ margin: '0 0 12px 0', fontSize: '14px' }}>팀별 진행 상태</h3>
+
+          <div className="glass rise" style={{ padding: '18px', marginBottom: '14px', animationDelay: '.06s' }}>
+            <h3 className="dim" style={{ fontSize: '12.5px', fontWeight: 700, marginBottom: '15px' }}>팀별 진행 상태</h3>
             {TEAMS.map(team => {
               const teamData = data[team.id] || {};
               const done = Object.keys(teamData).length;
               const pct = (done / ZONES.length) * 100;
               return (
-                <div key={team.id} style={{ marginBottom: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: team.color, marginRight: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', color: 'white' }}>{team.id}</div>
-                    <span style={{ flex: 1, fontSize: '13px' }}>{team.name}</span>
-                    <span style={{ fontSize: '13px', color: '#6b7280' }}>{done}/{ZONES.length}</span>
+                <div key={team.id} style={{ marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '6px', gap: '9px' }}>
+                    <div className="mono" style={{ width: '24px', height: '24px', borderRadius: '8px', background: `linear-gradient(150deg, ${team.color}, ${team.deep})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800, color: '#fff', boxShadow: `0 3px 9px ${team.color}55` }}>{team.id}</div>
+                    <span style={{ flex: 1, fontSize: '13px', fontWeight: 500 }}>{team.name}</span>
+                    <span className="faint mono" style={{ fontSize: '12px' }}>{done}/{ZONES.length}</span>
                   </div>
-                  <div style={{ background: '#e5e7eb', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
-                    <div style={{ width: `${pct}%`, height: '100%', background: team.color, transition: 'width 0.3s' }} />
+                  <div className="progress" style={{ height: '7px' }}>
+                    <div className={pct > 0 ? 'progress-fill on' : 'progress-fill'} style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${team.color}, ${team.deep})` }} />
                   </div>
                 </div>
               );
             })}
           </div>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-            <button onClick={() => setMode('heatmap')} style={{ flex: 1, padding: '10px', border: 'none', borderRadius: '6px', background: mode === 'heatmap' ? '#3b82f6' : '#e5e7eb', color: mode === 'heatmap' ? 'white' : '#374151', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>🔥 방사선량 히트맵</button>
-            <button onClick={() => setMode('landmarks')} style={{ flex: 1, padding: '10px', border: 'none', borderRadius: '6px', background: mode === 'landmarks' ? '#3b82f6' : '#e5e7eb', color: mode === 'landmarks' ? 'white' : '#374151', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>🌉 교량·💊 캡슐</button>
+
+          <div className="rise" style={{ display: 'flex', gap: '9px', marginBottom: '12px', animationDelay: '.12s' }}>
+            <button className={mode === 'heatmap' ? 'seg seg-on ripple' : 'seg ripple'} onClick={() => setMode('heatmap')}>🔥 방사선량 히트맵</button>
+            <button className={mode === 'landmarks' ? 'seg seg-on ripple' : 'seg ripple'} onClick={() => setMode('landmarks')}>🌉 교량·💊 캡슐</button>
           </div>
+
           {mode === 'heatmap' && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px', alignItems: 'center' }}>
-              <span style={{ fontSize: '12px', color: '#6b7280' }}>보기:</span>
-              <button onClick={() => setSelectedTeam(null)} style={{ padding: '4px 10px', border: 'none', borderRadius: '4px', background: selectedTeam === null ? '#111' : '#e5e7eb', color: selectedTeam === null ? 'white' : '#374151', fontSize: '12px', cursor: 'pointer' }}>전체 평균</button>
+            <div className="fade" style={{ display: 'flex', flexWrap: 'wrap', gap: '7px', marginBottom: '12px', alignItems: 'center' }}>
+              <span className="faint" style={{ fontSize: '11.5px', fontWeight: 600 }}>보기:</span>
+              <button className={selectedTeam === null ? 'chip chip-on ripple' : 'chip ripple'} onClick={() => setSelectedTeam(null)}>전체 평균</button>
               {TEAMS.map(t => (
-                <button key={t.id} onClick={() => setSelectedTeam(t.id)} style={{ padding: '4px 10px', border: 'none', borderRadius: '4px', background: selectedTeam === t.id ? t.color : '#e5e7eb', color: selectedTeam === t.id ? 'white' : '#374151', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>{t.id}팀</button>
+                <button key={t.id} className={selectedTeam === t.id ? 'chip chip-on ripple' : 'chip ripple'} onClick={() => setSelectedTeam(t.id)}
+                        style={selectedTeam === t.id ? { background: `linear-gradient(135deg, ${t.color}, ${t.deep})`, boxShadow: `0 5px 15px ${t.color}55` } : null}>
+                  {t.id}팀
+                </button>
               ))}
             </div>
           )}
-          <div style={{ background: 'white', padding: '12px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+
+          <div className="glass rise" style={{ padding: '14px', animationDelay: '.18s' }}>
             <FloorMap zoneData={data} heatmapMode={mode === 'heatmap'} teamId={selectedTeam} landmarksMode={mode === 'landmarks'} />
             {mode === 'heatmap' && (
-              <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '11px', color: '#6b7280' }}>
-                <span>낮음</span>
-                <div style={{ width: '24px', height: '12px', background: '#22c55e' }} />
-                <div style={{ width: '24px', height: '12px', background: '#eab308' }} />
-                <div style={{ width: '24px', height: '12px', background: '#f97316' }} />
-                <div style={{ width: '24px', height: '12px', background: '#ef4444' }} />
-                <div style={{ width: '24px', height: '12px', background: '#7f1d1d' }} />
-                <span>높음 (mSv/h)</span>
+              <div className="fade" style={{ marginTop: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '11px' }}>
+                <span className="faint" style={{ fontWeight: 600 }}>낮음</span>
+                <div style={{ display: 'flex', borderRadius: '999px', overflow: 'hidden', boxShadow: '0 3px 10px rgba(49,73,122,0.2)' }}>
+                  {HEAT.map(c => <div key={c} style={{ width: '32px', height: '12px', background: c }} />)}
+                </div>
+                <span className="faint" style={{ fontWeight: 600 }}>높음 (mSv/h)</span>
               </div>
             )}
             {mode === 'landmarks' && (
-              <div style={{ marginTop: '12px', fontSize: '12px', color: '#374151' }}>
-                <p style={{ margin: '4px 0' }}>🌉 표시된 구역: 팀들이 교량 발견 체크한 위치</p>
-                <p style={{ margin: '4px 0' }}>💊 표시된 구역: 팀들이 캡슐 발견 체크한 위치</p>
+              <div className="dim fade" style={{ marginTop: '14px', fontSize: '12px', lineHeight: 1.8 }}>
+                <div>🌉 표시된 구역 — 팀들이 교량 발견 체크한 위치</div>
+                <div>💊 표시된 구역 — 팀들이 캡슐 발견 체크한 위치</div>
               </div>
             )}
           </div>
@@ -364,25 +688,35 @@
 
     // ============ 홈 ============
     const HomeView = ({ onSelectTeam, onSelectAdmin, onReset }) => (
-      <div style={{ padding: '24px 16px', maxWidth: '500px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <h1 style={{ margin: '0 0 4px 0', fontSize: '24px' }}>극한환경 탐사 미션</h1>
-          <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>미션 1 · 정찰 매핑 (13개 구역)</p>
+      <div style={{ padding: '48px 16px 36px', maxWidth: '520px', margin: '0 auto' }}>
+        <div className="rise" style={{ textAlign: 'center', marginBottom: '28px' }}>
+          <div className="eyebrow" style={{ marginBottom: '10px' }}>Mission 01 · Recon Mapping</div>
+          <h1 style={{ fontSize: '29px', fontWeight: 800, marginBottom: '8px' }}>극한환경 탐사 미션</h1>
+          <p className="dim" style={{ margin: 0, fontSize: '13.5px' }}>바퀴형 로봇 정찰 · 13개 구역 데이터 매핑</p>
         </div>
-        <div style={{ marginBottom: '24px' }}>
-          <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '8px' }}>팀을 선택하세요</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '10px' }}>
-            {TEAMS.map(team => (
-              <button key={team.id} onClick={() => onSelectTeam(team.id)} style={{ padding: '20px 12px', border: 'none', borderRadius: '12px', background: team.color, cursor: 'pointer', fontSize: '18px', fontWeight: 'bold', color: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+
+        <div className="glass rise" style={{ padding: '20px', marginBottom: '13px', animationDelay: '.08s' }}>
+          <p className="faint" style={{ fontSize: '11.5px', fontWeight: 700, margin: '0 0 13px' }}>팀을 선택하세요</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))', gap: '11px' }}>
+            {TEAMS.map((team, i) => (
+              <button key={team.id} className="team-tile ripple pop" onClick={() => onSelectTeam(team.id)}
+                      style={{ ['--team']: team.color, ['--team-deep']: team.deep, ['--team-glow']: team.color + '66', animationDelay: `${140 + i * 55}ms` }}>
                 {team.id}
               </button>
             ))}
           </div>
         </div>
-        <button onClick={onSelectAdmin} style={{ width: '100%', padding: '14px', border: '2px solid #3b82f6', borderRadius: '10px', background: 'white', color: '#3b82f6', cursor: 'pointer', fontSize: '14px', fontWeight: '500', marginBottom: '10px' }}>👨‍🏫 강사 화면 (결과 보기)</button>
-        <button onClick={onReset} style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', background: 'white', color: '#ef4444', cursor: 'pointer', fontSize: '12px' }}>전체 데이터 초기화</button>
-        <div style={{ marginTop: '20px', padding: '12px', background: '#f9fafb', borderRadius: '8px', fontSize: '11px', color: '#6b7280', lineHeight: 1.5 }}>
-          <strong>태블릿 홈 화면에 추가:</strong><br />
+
+        <button className="btn-primary ripple rise" onClick={onSelectAdmin} style={{ width: '100%', padding: '16px', fontSize: '14px', marginBottom: '10px', animationDelay: '.36s' }}>
+          👨‍🏫 강사 화면 (결과 보기)
+        </button>
+
+        <button className="btn-glass ripple rise" onClick={onReset} style={{ width: '100%', padding: '12px', fontSize: '12px', color: 'var(--danger)', animationDelay: '.42s' }}>
+          전체 데이터 초기화
+        </button>
+
+        <div className="glass rise" style={{ marginTop: '20px', padding: '15px', borderRadius: '16px', fontSize: '11.5px', lineHeight: 1.7, color: 'var(--text-dim)', animationDelay: '.48s' }}>
+          <strong style={{ color: 'var(--text)' }}>태블릿 홈 화면에 추가</strong><br />
           팀 선택 후 브라우저 공유 → "홈 화면에 추가"
         </div>
       </div>
@@ -456,9 +790,10 @@
       }
 
       return (
-        <div style={{ minHeight: '100vh', background: '#f3f4f6' }}>
+        <div style={{ minHeight: '100vh' }}>
           <div className={connected ? 'conn-indicator conn-ok' : 'conn-indicator conn-err'}>
-            {connected ? '● 연결됨' : '⚠ 연결 끊김'}
+            <span className="conn-dot"></span>
+            {connected ? '연결됨' : '연결 끊김'}
           </div>
           {route.view === 'home' && (
             <HomeView
@@ -477,6 +812,26 @@
     }
 
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+
+  <!-- 터치 리플: 이벤트 위임이라 React가 새로 그린 요소에도 그대로 적용됨 -->
+  <script>
+    (function () {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      document.addEventListener('pointerdown', function (e) {
+        var el = e.target.closest && e.target.closest('.ripple');
+        if (!el) return;
+        var rect = el.getBoundingClientRect();
+        var d = Math.max(rect.width, rect.height);
+        var wave = document.createElement('span');
+        wave.className = 'ripple-wave';
+        wave.style.width = wave.style.height = d + 'px';
+        wave.style.left = (e.clientX - rect.left - d / 2) + 'px';
+        wave.style.top  = (e.clientY - rect.top  - d / 2) + 'px';
+        el.appendChild(wave);
+        setTimeout(function () { wave.remove(); }, 640);
+      }, { passive: true });
+    })();
   </script>
 </body>
 </html>
