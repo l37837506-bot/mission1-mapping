@@ -45,7 +45,14 @@
       background: transparent;   /* 불투명하면 아래 .bg 레이어를 덮어버린다 */
       overscroll-behavior: none;
       -webkit-font-smoothing: antialiased;
+
+      /* 태블릿 키오스크용: 드래그 선택·길게 눌러 뜨는 메뉴 차단 */
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none;
     }
+    /* 입력 필드는 예외 — 값을 고쳐야 하므로 선택이 가능해야 한다 */
+    input, textarea { -webkit-user-select: text; user-select: text; }
+    img, svg { -webkit-user-drag: none; user-drag: none; }
 
     /* ---------- 배경: 부드러운 파스텔 그라데이션 ---------- */
     .bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: linear-gradient(165deg, #dfe9fb 0%, #d9e4f7 40%, #e4e2f6 72%, #f0e6f3 100%); }
@@ -911,6 +918,12 @@
     }
 
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+
+  <!-- 우클릭 메뉴 / 드래그 차단. preventDefault를 부르므로 passive를 쓰면 안 된다 -->
+  <script>
+    document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    document.addEventListener('dragstart', function (e) { e.preventDefault(); });
   </script>
 
   <!-- 터치 리플: 이벤트 위임이라 React가 새로 그린 요소에도 그대로 적용됨 -->
