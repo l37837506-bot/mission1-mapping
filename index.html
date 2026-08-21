@@ -37,7 +37,14 @@
 
     * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
 
-    html { background: #dfe9fb; }   /* 스크롤 바운스 시 노출되는 캔버스 색 */
+    /* 모든 글자 크기는 rem이라, 루트만 키우면 UI 전체가 함께 커진다.
+       학생은 태블릿을 책상에 놓고 팔 길이에서 보므로 폰보다 크게 잡는다. */
+    html {
+      background: #dfe9fb;   /* 스크롤 바운스 시 노출되는 캔버스 색 */
+      font-size: 16px;
+    }
+    @media (min-width: 700px)  { html { font-size: 19px; } }
+    @media (min-width: 1000px) { html { font-size: 20px; } }
     body {
       margin: 0; padding: 0;
       font-family: var(--sans);
@@ -94,7 +101,7 @@
     /* ---------- 타이포 ---------- */
     h1, h2, h3 { margin: 0; letter-spacing: -0.015em; }
     .eyebrow {
-      font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.2em;
+      font-family: var(--mono); font-size: 0.6562rem; letter-spacing: 0.2em;
       text-transform: uppercase; color: var(--accent); font-weight: 600;
     }
     .dim   { color: var(--text-dim); }
@@ -122,7 +129,7 @@
       border-radius: 14px;
       -webkit-backdrop-filter: blur(16px) saturate(170%); backdrop-filter: blur(16px) saturate(170%);
       box-shadow: 0 4px 14px rgba(49, 73, 122, 0.10), inset 0 1px 0 rgba(255,255,255,0.9);
-      padding: 10px 15px; font-size: 13px; font-weight: 600; color: var(--text-dim);
+      padding: 0.625rem 0.9375rem; font-size: 0.8125rem; font-weight: 600; color: var(--text-dim);
     }
     .btn-glass:hover:not(:disabled) { background: rgba(255,255,255,0.82); color: var(--text); }
 
@@ -138,11 +145,11 @@
 
     /* 팀 타일 */
     .team-tile {
-      padding: 24px 12px; border-radius: 18px;
+      padding: 1.5rem 0.75rem; border-radius: 18px;
       border: 1px solid rgba(255, 255, 255, 0.8);
       background: linear-gradient(155deg, var(--team), var(--team-deep));
       box-shadow: 0 10px 24px var(--team-glow), inset 0 1px 0 rgba(255, 255, 255, 0.55);
-      font-size: 23px; font-weight: 800; color: #fff;
+      font-size: 1.4375rem; font-weight: 800; color: #fff;
       font-family: var(--mono);
       text-shadow: 0 1px 6px rgba(0, 0, 0, 0.22);
     }
@@ -156,7 +163,7 @@
 
     /* 칩 */
     .chip {
-      padding: 7px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;
+      padding: 0.44rem 0.875rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
       border: 1px solid var(--edge-soft);
       background: rgba(255, 255, 255, 0.48);
       -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
@@ -179,7 +186,7 @@
 
     /* 세그먼트 탭 */
     .seg {
-      flex: 1; padding: 13px 10px; border-radius: 15px; font-size: 13px; font-weight: 600;
+      flex: 1; padding: 0.8125rem 0.625rem; border-radius: 15px; font-size: 0.8125rem; font-weight: 600;
       display: flex; align-items: center; justify-content: center; gap: 7px;
       border: 1px solid var(--edge-soft);
       background: rgba(255, 255, 255, 0.46);
@@ -196,12 +203,12 @@
     /* ---------- 입력 ---------- */
     .field { margin-bottom: 14px; }
     .field label {
-      display: block; margin-bottom: 6px; font-size: 12px; font-weight: 700;
+      display: block; margin-bottom: 6px; font-size: 0.75rem; font-weight: 700;
       letter-spacing: 0.01em; color: var(--text-dim);
     }
     .field input[type="number"] {
-      width: 100%; padding: 13px 15px;
-      font-size: 16px !important;   /* iOS 자동 확대 방지 */
+      width: 100%; padding: 0.8125rem 0.9375rem;
+      font-size: 1rem !important;   /* iOS 자동 확대 방지 */
       font-family: var(--mono); font-weight: 600;
       color: var(--text);
       background: rgba(255, 255, 255, 0.62);
@@ -219,14 +226,14 @@
 
     .check {
       display: flex; align-items: center; gap: 12px;
-      padding: 13px 15px; border-radius: 15px; cursor: pointer;
+      padding: 0.8125rem 0.9375rem; border-radius: 15px; cursor: pointer;
       border: 1px solid var(--edge-soft);
       background: rgba(255, 255, 255, 0.46);
-      font-size: 15px; font-weight: 500;
+      font-size: 0.9375rem; font-weight: 500;
       transition: background .2s, border-color .2s, box-shadow .2s, transform .16s var(--ease);
     }
     .check:active { transform: scale(0.98); }
-    .check input { width: 20px; height: 20px; accent-color: #4f46e5; margin: 0; flex-shrink: 0; }
+    .check input { width: 1.25rem; height: 1.25rem; accent-color: #4f46e5; margin: 0; flex-shrink: 0; }
     .check-on {
       border-color: rgba(99, 102, 241, 0.5);
       background: rgba(224, 231, 255, 0.78);
@@ -252,7 +259,7 @@
     @keyframes sheen { 0% { transform: translateX(-120%); } 60%, 100% { transform: translateX(220%); } }
 
     /* ---------- 로딩 ---------- */
-    .loading { padding: 96px 20px; text-align: center; color: var(--text-dim); font-size: 14px; }
+    .loading { padding: 96px 20px; text-align: center; color: var(--text-dim); font-size: 0.875rem; }
     .loading-spinner {
       display: inline-block; width: 44px; height: 44px; margin-bottom: 16px;
       border: 3px solid rgba(99, 102, 241, 0.18);
@@ -267,7 +274,7 @@
       position: fixed; top: 10px; right: 10px; z-index: 200;
       display: flex; align-items: center; gap: 6px;
       padding: 7px 13px; border-radius: 999px;
-      font-size: 11px; font-weight: 700;
+      font-size: 0.6875rem; font-weight: 700;
       border: 1px solid var(--edge);
       -webkit-backdrop-filter: blur(18px) saturate(180%); backdrop-filter: blur(18px) saturate(180%);
       box-shadow: 0 5px 18px rgba(49, 73, 122, 0.14);
@@ -488,6 +495,33 @@
       },
     };
 
+    // Firebase 스트림은 전체가 아니라 바뀐 경로만 보낸다.
+    //   put   → 그 경로를 통째로 교체 (data === null 이면 삭제)
+    //   patch → 그 경로에 키만 병합
+    // path는 "/", "/1", "/1/α1" 같은 형태.
+    const applyStreamPatch = (prev, path, data, merge) => {
+      const parts = String(path || '/').split('/').filter(Boolean);
+      if (parts.length === 0) {
+        if (data === null || data === undefined) return {};
+        return merge ? { ...prev, ...data } : data;
+      }
+      const next = { ...prev };
+      let cur = next;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const k = parts[i];
+        cur[k] = (cur[k] && typeof cur[k] === 'object') ? { ...cur[k] } : {};
+        cur = cur[k];
+      }
+      const last = parts[parts.length - 1];
+      if (data === null || data === undefined) delete cur[last];
+      else if (merge && cur[last] && typeof cur[last] === 'object' && typeof data === 'object') {
+        cur[last] = { ...cur[last], ...data };
+      } else {
+        cur[last] = data;
+      }
+      return next;
+    };
+
     const getRadiationColor = (value) => {
       if (value === null || value === undefined || value === '') return null;
       const v = parseFloat(value);
@@ -614,16 +648,16 @@
              style={{ position: 'fixed', inset: 0, background: 'rgba(120, 140, 180, 0.32)', WebkitBackdropFilter: 'blur(14px)', backdropFilter: 'blur(14px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '16px' }}>
           <div className="glass-strong zoom" style={{ padding: '24px', maxWidth: '420px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px' }}>
-              <div className="mono" style={{ width: '58px', height: '58px', flexShrink: 0, borderRadius: '19px', background: `linear-gradient(150deg, ${zoneInfo.color}, ${zoneInfo.color}bb)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '19px', fontWeight: 800, color: 'white', boxShadow: `0 10px 24px ${zoneInfo.color}55, inset 0 1px 0 rgba(255,255,255,0.5)` }}>{zone}</div>
+              <div className="mono" style={{ width: '58px', height: '58px', flexShrink: 0, borderRadius: '19px', background: `linear-gradient(150deg, ${zoneInfo.color}, ${zoneInfo.color}bb)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1875rem', fontWeight: 800, color: 'white', boxShadow: `0 10px 24px ${zoneInfo.color}55, inset 0 1px 0 rgba(255,255,255,0.5)` }}>{zone}</div>
               <div>
                 <div className="eyebrow" style={{ marginBottom: '3px' }}>Zone Record</div>
-                <h2 style={{ fontSize: '19px' }}>구역 {zone}</h2>
-                <p className="faint" style={{ margin: '2px 0 0', fontSize: '12.5px' }}>{zoneInfo.desc}</p>
+                <h2 style={{ fontSize: '1.1875rem' }}>구역 {zone}</h2>
+                <p className="faint" style={{ margin: '2px 0 0', fontSize: '0.7812rem' }}>{zoneInfo.desc}</p>
               </div>
             </div>
 
             {zoneInfo.unstable && (
-              <div style={{ background: 'rgba(254, 243, 199, 0.8)', border: '1px solid rgba(245, 158, 11, 0.45)', borderRadius: '13px', padding: '11px 14px', marginBottom: '16px', fontSize: '12.5px', color: '#92400e', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '9px' }}>
+              <div style={{ background: 'rgba(254, 243, 199, 0.8)', border: '1px solid rgba(245, 158, 11, 0.45)', borderRadius: '13px', padding: '11px 14px', marginBottom: '16px', fontSize: '0.7812rem', color: '#92400e', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '9px' }}>
                 <Icon name="warning" size={17} />
                 <span>통신 불안정 구역 — FPV 화면이 흔들릴 수 있음</span>
               </div>
@@ -643,7 +677,7 @@
             </div>
 
             <div style={{ borderTop: '1px solid var(--edge-soft)', paddingTop: '16px', marginTop: '6px' }}>
-              <p className="faint" style={{ margin: '0 0 11px', fontSize: '11.5px', fontWeight: 700 }}>이 구역에서 발견한 것 (해당 시 체크)</p>
+              <p className="faint" style={{ margin: '0 0 11px', fontSize: '0.7188rem', fontWeight: 700 }}>이 구역에서 발견한 것 (해당 시 체크)</p>
               <label className={bridge ? 'check check-on ripple' : 'check ripple'} style={{ marginBottom: '9px' }}>
                 <input type="checkbox" checked={bridge} onChange={(e) => setBridge(e.target.checked)} />
                 <span className="ico-row" style={{ color: bridge ? '#4338ca' : 'var(--text-dim)' }}>
@@ -660,7 +694,7 @@
 
             <div style={{ display: 'flex', gap: '10px', marginTop: '22px' }}>
               <button className="btn-glass ripple" onClick={onClose} disabled={saving} style={{ flex: 1, padding: '14px' }}>취소</button>
-              <button className="btn-primary ripple" onClick={handleSave} disabled={saving} style={{ flex: 2, padding: '14px', fontSize: '14px' }}>
+              <button className="btn-primary ripple" onClick={handleSave} disabled={saving} style={{ flex: 2, padding: '14px', fontSize: '0.875rem' }}>
                 {saving ? '저장 중...' : '저장'}
               </button>
             </div>
@@ -681,14 +715,14 @@
           <div className="glass rise" style={{ padding: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button className="btn-glass ripple" onClick={onBack} style={{ flexShrink: 0, padding: '10px 13px' }}>←</button>
-              <div className="mono" style={{ width: '46px', height: '46px', flexShrink: 0, borderRadius: '15px', background: `linear-gradient(150deg, ${team.color}, ${team.deep})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '18px', color: 'white', boxShadow: `0 8px 20px ${team.color}66, inset 0 1px 0 rgba(255,255,255,0.5)` }}>{teamId}</div>
+              <div className="mono" style={{ width: '46px', height: '46px', flexShrink: 0, borderRadius: '15px', background: `linear-gradient(150deg, ${team.color}, ${team.deep})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.125rem', color: 'white', boxShadow: `0 8px 20px ${team.color}66, inset 0 1px 0 rgba(255,255,255,0.5)` }}>{teamId}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="eyebrow">Recon Log</div>
-                <h2 style={{ fontSize: '17px' }}>{team.name} · 정찰 기록</h2>
+                <h2 style={{ fontSize: '1.0625rem' }}>{team.name} · 정찰 기록</h2>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0, lineHeight: 1.1 }}>
-                <span className="mono" style={{ fontSize: '25px', fontWeight: 800, color: team.deep }}>{completedCount}</span>
-                <span className="faint mono" style={{ fontSize: '13px' }}> / {ZONES.length}</span>
+                <span className="mono" style={{ fontSize: '1.5625rem', fontWeight: 800, color: team.deep }}>{completedCount}</span>
+                <span className="faint mono" style={{ fontSize: '0.8125rem' }}> / {ZONES.length}</span>
               </div>
             </div>
             <div className="progress" style={{ height: '9px', marginTop: '14px' }}>
@@ -697,7 +731,7 @@
           </div>
 
           <div className="glass rise" style={{ padding: '14px', marginTop: '14px', animationDelay: '.08s' }}>
-            <p className="faint" style={{ margin: '0 0 10px', fontSize: '12.5px', textAlign: 'center', fontWeight: 500 }}>구역 핀을 탭하여 데이터 입력</p>
+            <p className="faint" style={{ margin: '0 0 10px', fontSize: '0.7812rem', textAlign: 'center', fontWeight: 500 }}>구역 핀을 탭하여 데이터 입력</p>
             <FloorMap zoneData={data} onZoneClick={setSelectedZone} teamId={teamId} selectedZone={selectedZone} />
           </div>
 
@@ -721,12 +755,12 @@
             <button className="btn-glass ripple" onClick={onBack} style={{ padding: '10px 13px' }}>←</button>
             <div>
               <div className="eyebrow">Control Room</div>
-              <h2 style={{ fontSize: '19px' }}>강사 · 결과 화면</h2>
+              <h2 style={{ fontSize: '1.1875rem' }}>강사 · 결과 화면</h2>
             </div>
           </div>
 
           <div className="glass rise" style={{ padding: '18px', marginBottom: '14px', animationDelay: '.06s' }}>
-            <h3 className="dim" style={{ fontSize: '12.5px', fontWeight: 700, marginBottom: '15px' }}>팀별 진행 상태</h3>
+            <h3 className="dim" style={{ fontSize: '0.7812rem', fontWeight: 700, marginBottom: '15px' }}>팀별 진행 상태</h3>
             {TEAMS.map(team => {
               const teamData = data[team.id] || {};
               const done = Object.keys(teamData).length;
@@ -734,9 +768,9 @@
               return (
                 <div key={team.id} style={{ marginBottom: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '6px', gap: '9px' }}>
-                    <div className="mono" style={{ width: '24px', height: '24px', borderRadius: '8px', background: `linear-gradient(150deg, ${team.color}, ${team.deep})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800, color: '#fff', boxShadow: `0 3px 9px ${team.color}55` }}>{team.id}</div>
-                    <span style={{ flex: 1, fontSize: '13px', fontWeight: 500 }}>{team.name}</span>
-                    <span className="faint mono" style={{ fontSize: '12px' }}>{done}/{ZONES.length}</span>
+                    <div className="mono" style={{ width: '24px', height: '24px', borderRadius: '8px', background: `linear-gradient(150deg, ${team.color}, ${team.deep})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6875rem', fontWeight: 800, color: '#fff', boxShadow: `0 3px 9px ${team.color}55` }}>{team.id}</div>
+                    <span style={{ flex: 1, fontSize: '0.8125rem', fontWeight: 500 }}>{team.name}</span>
+                    <span className="faint mono" style={{ fontSize: '0.75rem' }}>{done}/{ZONES.length}</span>
                   </div>
                   <div className="progress" style={{ height: '7px' }}>
                     <div className={pct > 0 ? 'progress-fill on' : 'progress-fill'} style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${team.color}, ${team.deep})` }} />
@@ -757,7 +791,7 @@
 
           {mode === 'heatmap' && (
             <div className="fade" style={{ display: 'flex', flexWrap: 'wrap', gap: '7px', marginBottom: '12px', alignItems: 'center' }}>
-              <span className="faint" style={{ fontSize: '11.5px', fontWeight: 600 }}>보기:</span>
+              <span className="faint" style={{ fontSize: '0.7188rem', fontWeight: 600 }}>보기:</span>
               <button className={selectedTeam === null ? 'chip chip-on ripple' : 'chip ripple'} onClick={() => setSelectedTeam(null)}>전체 평균</button>
               {TEAMS.map(t => (
                 <button key={t.id} className={selectedTeam === t.id ? 'chip chip-on ripple' : 'chip ripple'} onClick={() => setSelectedTeam(t.id)}
@@ -771,7 +805,7 @@
           <div className="glass rise" style={{ padding: '14px', animationDelay: '.18s' }}>
             <FloorMap zoneData={data} heatmapMode={mode === 'heatmap'} teamId={selectedTeam} landmarksMode={mode === 'landmarks'} />
             {mode === 'heatmap' && (
-              <div className="fade" style={{ marginTop: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '11px' }}>
+              <div className="fade" style={{ marginTop: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.6875rem' }}>
                 <span className="faint" style={{ fontWeight: 600 }}>낮음</span>
                 <div style={{ display: 'flex', borderRadius: '999px', overflow: 'hidden', boxShadow: '0 3px 10px rgba(49,73,122,0.2)' }}>
                   {HEAT.map(c => <div key={c} style={{ width: '32px', height: '12px', background: c }} />)}
@@ -780,7 +814,7 @@
               </div>
             )}
             {mode === 'landmarks' && (
-              <div className="dim fade" style={{ marginTop: '14px', fontSize: '12px', display: 'grid', gap: '8px' }}>
+              <div className="dim fade" style={{ marginTop: '14px', fontSize: '0.75rem', display: 'grid', gap: '8px' }}>
                 <div className="ico-row"><span className="legend-dot" style={{ background: '#1f2937' }}><Icon name="bridge" size={14} /></span>표시된 구역 — 팀들이 교량 발견 체크한 위치</div>
                 <div className="ico-row"><span className="legend-dot" style={{ background: '#f59e0b' }}><Icon name="capsule" size={14} /></span>표시된 구역 — 팀들이 캡슐 발견 체크한 위치</div>
               </div>
@@ -795,12 +829,12 @@
       <div style={{ padding: '48px 16px 36px', maxWidth: '520px', margin: '0 auto' }}>
         <div className="rise" style={{ textAlign: 'center', marginBottom: '28px' }}>
           <div className="eyebrow" style={{ marginBottom: '10px' }}>Mission 01 · Recon Mapping</div>
-          <h1 style={{ fontSize: '29px', fontWeight: 800, marginBottom: '8px' }}>극한환경 탐사 미션</h1>
-          <p className="dim" style={{ margin: 0, fontSize: '13.5px' }}>바퀴형 로봇 정찰 · 13개 구역 데이터 매핑</p>
+          <h1 style={{ fontSize: '1.8125rem', fontWeight: 800, marginBottom: '8px' }}>극한환경 탐사 미션</h1>
+          <p className="dim" style={{ margin: 0, fontSize: '0.8438rem' }}>바퀴형 로봇 정찰 · 13개 구역 데이터 매핑</p>
         </div>
 
         <div className="glass rise" style={{ padding: '20px', marginBottom: '13px', animationDelay: '.08s' }}>
-          <p className="faint" style={{ fontSize: '11.5px', fontWeight: 700, margin: '0 0 13px' }}>팀을 선택하세요</p>
+          <p className="faint" style={{ fontSize: '0.7188rem', fontWeight: 700, margin: '0 0 13px' }}>팀을 선택하세요</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))', gap: '11px' }}>
             {TEAMS.map((team, i) => (
               <button key={team.id} className="team-tile ripple pop" onClick={() => onSelectTeam(team.id)}
@@ -811,15 +845,15 @@
           </div>
         </div>
 
-        <button className="btn-primary ripple rise ico-row" onClick={onSelectAdmin} style={{ width: '100%', padding: '16px', fontSize: '14px', marginBottom: '10px', animationDelay: '.36s', justifyContent: 'center' }}>
+        <button className="btn-primary ripple rise ico-row" onClick={onSelectAdmin} style={{ width: '100%', padding: '16px', fontSize: '0.875rem', marginBottom: '10px', animationDelay: '.36s', justifyContent: 'center' }}>
           <Icon name="board" size={18} /><span>강사 화면 (결과 보기)</span>
         </button>
 
-        <button className="btn-glass ripple rise" onClick={onReset} style={{ width: '100%', padding: '12px', fontSize: '12px', color: 'var(--danger)', animationDelay: '.42s' }}>
+        <button className="btn-glass ripple rise" onClick={onReset} style={{ width: '100%', padding: '12px', fontSize: '0.75rem', color: 'var(--danger)', animationDelay: '.42s' }}>
           전체 데이터 초기화
         </button>
 
-        <div className="glass rise" style={{ marginTop: '20px', padding: '15px', borderRadius: '16px', fontSize: '11.5px', lineHeight: 1.7, color: 'var(--text-dim)', animationDelay: '.48s' }}>
+        <div className="glass rise" style={{ marginTop: '20px', padding: '15px', borderRadius: '16px', fontSize: '0.7188rem', lineHeight: 1.7, color: 'var(--text-dim)', animationDelay: '.48s' }}>
           <strong style={{ color: 'var(--text)' }}>태블릿 홈 화면에 추가</strong><br />
           팀 선택 후 브라우저 공유 → "홈 화면에 추가"
         </div>
@@ -840,29 +874,92 @@
         return () => window.removeEventListener('hashchange', handleHash);
       }, []);
 
-      // 폴링: 3초마다 데이터 갱신
+      // 실시간 수신(SSE) + 실패 시 폴링 폴백.
+      // 스트림은 바뀐 부분만 밀어주므로 3초 폴링보다 오히려 트래픽이 적고,
+      // 강사 화면에서 학생 입력이 들어오는 즉시 반영된다.
       useEffect(() => {
         let cancelled = false;
-        const poll = async () => {
-          try {
-            const val = await api.getAll();
-            if (!cancelled) {
-              setData(val || {});
-              setConnected(true);
-              setError(null);
-              setLoading(false);
-            }
-          } catch (e) {
-            if (!cancelled) {
-              setConnected(false);
-              setError(e.message);
-              setLoading(false);
-            }
-          }
+        let es = null, pollTimer = null, firstDataTimer = null;
+        let gotData = false;
+
+        const onData = (updater) => {
+          if (cancelled) return;
+          gotData = true;
+          setData(updater);
+          setConnected(true);
+          setError(null);
+          setLoading(false);
         };
-        poll();
-        const interval = setInterval(poll, POLL_INTERVAL);
-        return () => { cancelled = true; clearInterval(interval); };
+
+        const startPolling = () => {
+          if (cancelled || pollTimer) return;
+          const poll = async () => {
+            try {
+              const val = await api.getAll();
+              if (!cancelled) {
+                setData(val || {});
+                setConnected(true);
+                setError(null);
+                setLoading(false);
+              }
+            } catch (e) {
+              if (!cancelled) {
+                setConnected(false);
+                setError(e.message);
+                setLoading(false);
+              }
+            }
+          };
+          poll();
+          pollTimer = setInterval(poll, POLL_INTERVAL);
+        };
+
+        const stopStream = () => {
+          if (firstDataTimer) { clearTimeout(firstDataTimer); firstDataTimer = null; }
+          if (es) { es.close(); es = null; }
+        };
+
+        if (typeof EventSource !== 'undefined') {
+          try {
+            es = new EventSource(`${DATABASE_URL}/${DB_PATH}.json`);
+
+            const handle = (merge) => (e) => {
+              let msg;
+              try { msg = JSON.parse(e.data); } catch (_) { return; }
+              if (!msg) return;
+              onData(prev => applyStreamPatch(prev, msg.path, msg.data, merge));
+            };
+            es.addEventListener('put', handle(false));
+            es.addEventListener('patch', handle(true));
+
+            es.addEventListener('cancel', () => { stopStream(); startPolling(); });
+            es.addEventListener('auth_revoked', () => { stopStream(); startPolling(); });
+
+            es.onerror = () => {
+              // EventSource는 스스로 재연결한다. 아직 한 번도 못 받았으면
+              // 스트림이 막힌 환경이라고 보고 폴링으로 내려간다.
+              if (cancelled) return;
+              if (!gotData) { stopStream(); startPolling(); }
+              else setConnected(false);
+            };
+
+            // 스트림이 조용히 안 열리는 경우 대비
+            firstDataTimer = setTimeout(() => {
+              if (!cancelled && !gotData) { stopStream(); startPolling(); }
+            }, 6000);
+          } catch (e) {
+            stopStream();
+            startPolling();
+          }
+        } else {
+          startPolling();
+        }
+
+        return () => {
+          cancelled = true;
+          stopStream();
+          if (pollTimer) clearInterval(pollTimer);
+        };
       }, []);
 
       const handleSave = useCallback(async (teamId, zoneCode, inputData) => {
