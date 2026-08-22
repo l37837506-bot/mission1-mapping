@@ -298,6 +298,10 @@
     /* SVG 핀 등장 (stagger) */
     .pin { animation: pop .44s var(--ease) both; transition: transform .18s var(--ease); transform-box: fill-box; transform-origin: center; }
     .pin:active { transform: scale(0.9); }
+    /* 정복한 구역: 또렷하게 빛난다 */
+    .pin-won { filter: drop-shadow(0 0 9px var(--won-glow, rgba(99,102,241,0.8))) drop-shadow(0 3px 6px rgba(23,35,59,0.28)); }
+    /* 미방문 구역: 안개 속 — 흐릿하지만 탭해서 입력하는 건 그대로 된다 */
+    .pin-fog { filter: blur(2.2px) saturate(0.5) opacity(0.55); }
 
     @media (prefers-reduced-motion: reduce) {
       .rise, .pop, .zoom, .fade, .pin, .conn-indicator { animation: none !important; }
@@ -427,9 +431,7 @@
         </defs>
 
         {/* 건물 외곽 — 유리판 위의 종이처럼 */}
-        <circle cx="450" cy="450" r="438" fill="url(#paperGlow)" stroke="rgba(255,255,255,0.9)" strokeWidth="3" />
-        <circle cx="450" cy="450" r="438" fill="none" stroke="rgba(43,58,85,0.22)" strokeWidth="1.5" />
-        <circle cx="450" cy="450" r="422" fill="none" stroke="rgba(43,58,85,0.09)" strokeWidth="1" />
+        <circle cx="450" cy="450" r="438" fill="url(#paperGlow)" />
 
         {/* 주행 가능 복도 */}
         <g fill="url(#corridorGrad)">
@@ -548,7 +550,7 @@
 
     // ============ 지도 ============
     const FloorMap = ({ zoneData, onZoneClick, selectedZone, heatmapMode = false, teamId = null, landmarksMode = false }) => {
-      const getPinFill = (zone) => {
+      const getPinFill = (zone, visited) => {
         if (heatmapMode) {
           let values = [];
           if (teamId) {
@@ -564,8 +566,10 @@
           const avg = values.reduce((a, b) => a + b, 0) / values.length;
           return getRadiationColor(avg) || EMPTY_PIN;
         }
-        const filled = teamId && zoneData[teamId]?.[zone.code]?.radiation;
-        return filled ? zone.color : WHITE_PIN;
+        if (!visited) return WHITE_PIN;
+        if (landmarksMode) return zone.color;
+        const team = TEAMS.find(t => t.id === teamId);
+        return team ? team.color : zone.color;
       };
       const zoneWithBridge = (code) => TEAMS.some(t => zoneData[t.id]?.[code]?.bridge);
       const zoneWithCapsule = (code) => TEAMS.some(t => zoneData[t.id]?.[code]?.capsule);
@@ -574,30 +578,32 @@
           <CleanFloorPlan />
           {ZONES.map((zone, i) => {
             const isSelected = selectedZone === zone.code;
-            const filled = teamId && zoneData[teamId]?.[zone.code]?.radiation;
-            const pinFill = getPinFill(zone);
-            const r = isSelected ? 20 : 18;
+            // 정복 여부: 팀 화면·팀 필터는 그 팀 기준, 전체 보기는 아무 팀이나 입력했으면 정복
+            const visited = teamId
+              ? !!zoneData[teamId]?.[zone.code]
+              : TEAMS.some(t => !!zoneData[t.id]?.[zone.code]);
+            const pinFill = getPinFill(zone, visited);
+            const r = isSelected ? 23 : 21;
             const hasBridge = landmarksMode && zoneWithBridge(zone.code);
             const hasCapsule = landmarksMode && zoneWithCapsule(zone.code);
             const labelFill = pinFill === WHITE_PIN ? zone.color
                             : DARK_LABEL_ON.includes(pinFill) ? '#334155' : '#fff';
             return (
-              <g key={zone.code} className="pin" style={{ cursor: onZoneClick ? 'pointer' : 'default', animationDelay: `${i * 35}ms` }}
+              <g key={zone.code} className={'pin ' + (visited ? 'pin-won' : 'pin-fog')}
+                 style={{ cursor: onZoneClick ? 'pointer' : 'default', animationDelay: `${i * 35}ms`, '--won-glow': visited ? pinFill : undefined }}
                  onClick={() => onZoneClick && onZoneClick(zone.code)}>
                 {/* 선택 시 확산 링 */}
                 {isSelected && <circle cx={zone.x} cy={zone.y} r={r + 13} fill="none" stroke="#6366f1" strokeWidth="2.5" opacity="0.55" />}
                 {/* 핀 받침 그림자 */}
                 <ellipse cx={zone.x + 1} cy={zone.y + 6} rx={r + 2} ry={(r + 2) * 0.3} fill="rgba(23,35,59,0.28)" />
-                {/* 유리 링 */}
-                <circle cx={zone.x} cy={zone.y} r={r + 6} fill="rgba(255,255,255,0.72)" stroke="rgba(255,255,255,0.95)" strokeWidth="1.5" />
-                <circle cx={zone.x} cy={zone.y} r={r} fill={pinFill} stroke={zone.color} strokeWidth="3" />
+                <circle cx={zone.x} cy={zone.y} r={r} fill={pinFill} />
                 {/* 상단 유리 반사 */}
                 <ellipse cx={zone.x} cy={zone.y - r * 0.44} rx={r * 0.58} ry={r * 0.28} fill="rgba(255,255,255,0.38)" style={{ pointerEvents: 'none' }} />
                 <text x={zone.x} y={zone.y + 6} textAnchor="middle" fontSize="15" fontWeight="bold"
                       fill={labelFill} style={{ pointerEvents: 'none' }}>
                   {zone.code}
                 </text>
-                {filled && !heatmapMode && !landmarksMode && (
+                {visited && !heatmapMode && !landmarksMode && (
                   <g style={{ pointerEvents: 'none' }}>
                     <circle cx={zone.x + r * 0.7} cy={zone.y - r * 0.7} r="11" fill="#10b981" stroke="#fff" strokeWidth="2.5" />
                     <MapIcon name="check" cx={zone.x + r * 0.7} cy={zone.y - r * 0.7} size={14} color="#fff" />
