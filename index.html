@@ -653,8 +653,13 @@
             const visited = isVisited(zone.code);
             const pinFill = getPinFill(zone, visited);
             const r = isSelected ? 23 : 21;
-            const hasBridge = landmarksMode && zoneWithBridge(zone.code);
-            const hasCapsule = landmarksMode && zoneWithCapsule(zone.code);
+            // 강사 랜드마크 모드: 전체 팀 / 팀 화면: 자기 팀이 체크한 것만
+            const teamMode = !heatmapMode && !landmarksMode && !!teamId;
+            const ownEntry = teamId ? zoneData[teamId]?.[zone.code] : null;
+            const hasBridge = landmarksMode ? zoneWithBridge(zone.code) : (teamMode && !!ownEntry?.bridge);
+            const hasCapsule = landmarksMode ? zoneWithCapsule(zone.code) : (teamMode && !!ownEntry?.capsule);
+            // 팀 화면은 우상단이 체크 배지 자리라 캡슐을 우하단으로 내린다
+            const capY = landmarksMode ? zone.y - r * 0.8 : zone.y + r * 0.85;
             const labelFill = pinFill === WHITE_PIN ? zone.color
                             : DARK_LABEL_ON.includes(pinFill) ? '#334155' : '#fff';
             return (
@@ -687,8 +692,8 @@
                 )}
                 {hasCapsule && (
                   <g style={{ pointerEvents: 'none' }}>
-                    <circle cx={zone.x + r * 0.7} cy={zone.y - r * 0.8} r="15" fill="#f59e0b" stroke="#fff" strokeWidth="2.5" />
-                    <MapIcon name="capsule" cx={zone.x + r * 0.7} cy={zone.y - r * 0.8} size={19} color="#fff" />
+                    <circle cx={zone.x + r * 0.7} cy={capY} r="15" fill="#f59e0b" stroke="#fff" strokeWidth="2.5" />
+                    <MapIcon name="capsule" cx={zone.x + r * 0.7} cy={capY} size={19} color="#fff" />
                   </g>
                 )}
               </g>
@@ -945,7 +950,7 @@
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b10 · NRC scale';
+    const APP_BUILD = 'b11 · landmarks';
 
     function App() {
       const [route, setRoute] = useState(parseHash());
