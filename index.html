@@ -300,8 +300,11 @@
     .pin:active { transform: scale(0.9); }
     /* 정복한 구역: 또렷하게 빛난다 */
     .pin-won { filter: drop-shadow(0 0 9px var(--won-glow, rgba(99,102,241,0.8))) drop-shadow(0 3px 6px rgba(23,35,59,0.28)); }
-    /* 미방문 구역: 안개 속 — 흐릿하지만 탭해서 입력하는 건 그대로 된다 */
-    .pin-fog { filter: blur(2.2px) saturate(0.5) opacity(0.55); }
+    /* 미방문 구역: 안개 속 — 원반만 흐리고 구역 이름은 선명하게 남긴다.
+       탭해서 입력하는 건 그대로 된다 */
+    /* 그룹 opacity는 등장 애니메이션(pop, fill:both)이 덮어쓰므로 자식에만 건다 */
+    .pin-fog .pin-body { filter: blur(2.2px) saturate(0.5) opacity(0.6); }
+    .pin-fog text { opacity: 0.85; }
 
     @media (prefers-reduced-motion: reduce) {
       .rise, .pop, .zoom, .fade, .pin, .conn-indicator { animation: none !important; }
@@ -450,8 +453,12 @@
             <g fill="#fff"><CorridorShapes /></g>
             <g fill="#000"><VoidShapes /></g>
           </mask>
+          {/* 셀 경계를 노이즈로 흔들어 유기적인 오염 확산처럼 보이게 하고,
+              마지막 blur가 인접 셀 색을 이음새에서 그라데이션으로 섞는다 */}
           <filter id="zoneSpread" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="4" />
+            <feTurbulence type="fractalNoise" baseFrequency="0.028" numOctaves="3" seed="11" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="34" xChannelSelector="R" yChannelSelector="G" />
+            <feGaussianBlur stdDeviation="7" />
           </filter>
         </defs>
 
@@ -648,11 +655,12 @@
                  onClick={() => onZoneClick && onZoneClick(zone.code)}>
                 {/* 선택 시 확산 링 */}
                 {isSelected && <circle cx={zone.x} cy={zone.y} r={r + 13} fill="none" stroke="#6366f1" strokeWidth="2.5" opacity="0.55" />}
-                {/* 핀 받침 그림자 */}
-                <ellipse cx={zone.x + 1} cy={zone.y + 6} rx={r + 2} ry={(r + 2) * 0.3} fill="rgba(23,35,59,0.28)" />
-                <circle cx={zone.x} cy={zone.y} r={r} fill={pinFill} />
-                {/* 상단 유리 반사 */}
-                <ellipse cx={zone.x} cy={zone.y - r * 0.44} rx={r * 0.58} ry={r * 0.28} fill="rgba(255,255,255,0.38)" style={{ pointerEvents: 'none' }} />
+                {/* 원반(그림자+원+반사)만 pin-body — 안개 블러가 글자를 건드리지 않게 분리 */}
+                <g className="pin-body">
+                  <ellipse cx={zone.x + 1} cy={zone.y + 6} rx={r + 2} ry={(r + 2) * 0.3} fill="rgba(23,35,59,0.28)" />
+                  <circle cx={zone.x} cy={zone.y} r={r} fill={pinFill} />
+                  <ellipse cx={zone.x} cy={zone.y - r * 0.44} rx={r * 0.58} ry={r * 0.28} fill="rgba(255,255,255,0.38)" style={{ pointerEvents: 'none' }} />
+                </g>
                 <text x={zone.x} y={zone.y + 6} textAnchor="middle" fontSize="15" fontWeight="bold"
                       fill={labelFill} style={{ pointerEvents: 'none' }}>
                   {zone.code}
