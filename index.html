@@ -370,13 +370,13 @@
           <path d="M2 17c2.6-1.5 4-5 4.5-11.5M17.5 5.5c.5 6.5 1.9 10 4.5 11.5" />
         </g>
       ),
-      // 캡슐: 45° 기울인 알약 + 중앙 분할선
+      // 방사성 선원 캡슐: 원통형 몸체 + 상단 인양 고리 + 밀봉 이음선
       capsule: (
         <g {...STROKE}>
-          <g transform="rotate(-45 12 12)">
-            <rect x="2.5" y="8.5" width="19" height="7" rx="3.5" />
-            <path d="M12 8.5v7" />
-          </g>
+          <circle cx="12" cy="4.4" r="2.4" />
+          <path d="M12 6.8v1.4" />
+          <rect x="7.75" y="8.2" width="8.5" height="13" rx="2.6" />
+          <path d="M7.75 12.4h8.5" />
         </g>
       ),
       // 방사선 경고 삼엽 — 불꽃 기호보다 미션 맥락에 맞음
@@ -686,14 +686,14 @@
                 )}
                 {hasBridge && (
                   <g style={{ pointerEvents: 'none' }}>
-                    <circle cx={zone.x - r * 0.7} cy={zone.y - r * 0.8} r="15" fill="#1f2937" stroke="#fff" strokeWidth="2.5" />
-                    <MapIcon name="bridge" cx={zone.x - r * 0.7} cy={zone.y - r * 0.8} size={19} color="#fff" />
+                    <circle cx={zone.x - r * 0.7} cy={zone.y - r * 0.8} r="17.5" fill="#1f2937" stroke="#fff" strokeWidth="2.5" />
+                    <MapIcon name="bridge" cx={zone.x - r * 0.7} cy={zone.y - r * 0.8} size={23} color="#fff" />
                   </g>
                 )}
                 {hasCapsule && (
                   <g style={{ pointerEvents: 'none' }}>
-                    <circle cx={zone.x + r * 0.7} cy={capY} r="15" fill="#f59e0b" stroke="#fff" strokeWidth="2.5" />
-                    <MapIcon name="capsule" cx={zone.x + r * 0.7} cy={capY} size={19} color="#fff" />
+                    <circle cx={zone.x + r * 0.7} cy={capY} r="17.5" fill="#f59e0b" stroke="#fff" strokeWidth="2.5" />
+                    <MapIcon name="capsule" cx={zone.x + r * 0.7} cy={capY} size={23} color="#fff" />
                   </g>
                 )}
               </g>
@@ -950,7 +950,7 @@
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b11 · landmarks';
+    const APP_BUILD = 'b12 · source capsule';
 
     function App() {
       const [route, setRoute] = useState(parseHash());
