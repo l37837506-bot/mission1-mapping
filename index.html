@@ -343,7 +343,7 @@
 
     const EMPTY_PIN = '#cbd5e1';                  // 히트맵에서 값 없는 구역
     const WHITE_PIN = 'rgba(255,255,255,0.95)';   // 미입력 구역
-    const HEAT = ['#22c55e', '#eab308', '#f97316', '#ef4444', '#7f1d1d'];  // 방사선 범례 색
+    const HEAT = ['#22c55e', '#f97316', '#ef4444'];  // 방사선 범례 색 (IAEA OIL 3단계)
     const DARK_LABEL_ON = [EMPTY_PIN, '#eab308']; // 밝은 핀 위에는 어두운 글자
 
     // ============ 아이콘 ============
@@ -568,15 +568,17 @@
       return next;
     };
 
+    // IAEA 비상대응 운영개입준위(OIL) 기반 3단계 (mSv/h):
+    //   < 0.1  초록  — OIL2 미만, 통제구역 통상 작업 수준
+    //   0.1~1  주황  — OIL2~OIL1, 진입은 가능하나 체류시간 제한
+    //   >= 1   빨강  — OIL1 이상, 소개(대피) 기준. 사람 대신 로봇 투입
     const getRadiationColor = (value) => {
       if (value === null || value === undefined || value === '') return null;
       const v = parseFloat(value);
       if (isNaN(v)) return null;
-      if (v < 2) return '#22c55e';
-      if (v < 4) return '#eab308';
-      if (v < 6) return '#f97316';
-      if (v < 8) return '#ef4444';
-      return '#7f1d1d';
+      if (v < 0.1) return '#22c55e';
+      if (v < 1) return '#f97316';
+      return '#ef4444';
     };
 
     // ============ 라우팅 ============
@@ -734,7 +736,7 @@
 
             <div className="field">
               <label>방사선량 (mSv/h)</label>
-              <input type="number" step="0.1" value={radiation} onChange={(e) => setRadiation(e.target.value)} placeholder="예: 3.5" />
+              <input type="number" step="0.1" value={radiation} onChange={(e) => setRadiation(e.target.value)} placeholder="예: 0.05" />
             </div>
             <div className="field">
               <label>온도 (°C)</label>
