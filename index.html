@@ -451,7 +451,7 @@
             <g fill="#000"><VoidShapes /></g>
           </mask>
           <filter id="zoneSpread" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="17" />
+            <feGaussianBlur stdDeviation="14" />
           </filter>
         </defs>
 
@@ -608,9 +608,9 @@
               const avg = zoneRadiation(zone.code);
               const noReading = avg === null;
               return (
-                <circle key={zone.code} cx={zone.x} cy={zone.y} r="86"
+                <circle key={zone.code} cx={zone.x} cy={zone.y} r="132"
                         fill={noReading ? '#e2e8f0' : getRadiationColor(avg)}
-                        opacity={noReading ? 0.4 : 0.72} />
+                        opacity={noReading ? 0.45 : 0.82} />
               );
             })}
           </g>
