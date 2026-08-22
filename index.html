@@ -340,6 +340,7 @@
 
     const EMPTY_PIN = '#cbd5e1';                  // 히트맵에서 값 없는 구역
     const WHITE_PIN = 'rgba(255,255,255,0.95)';   // 미입력 구역
+    const HEAT = ['#22c55e', '#eab308', '#f97316', '#ef4444', '#7f1d1d'];  // 방사선 범례 색
     const DARK_LABEL_ON = [EMPTY_PIN, '#eab308']; // 밝은 핀 위에는 어두운 글자
 
     // ============ 아이콘 ============
@@ -417,6 +418,22 @@
     };
 
     // ============ 도면 ============
+    // 복도/비사용 공간 지오메트리 — 도면과 점령 오버레이 마스크가 같은 모양을 공유한다
+    const CorridorShapes = () => (
+      <React.Fragment>
+        <rect x="440" y="42" width="96" height="120" rx="14" />
+        <rect x="365" y="108" width="106" height="247" rx="18" />
+        <rect x="160" y="286" width="690" height="114" rx="18" />
+        <path d="M270 366 C252 430 250 520 247 615 C244 700 239 760 282 801 C312 829 357 823 389 790 C427 751 446 709 492 688 C533 670 586 688 619 661 C660 628 659 586 635 540 L562 398 C506 369 410 356 333 357 C303 358 282 361 270 366 Z" />
+      </React.Fragment>
+    );
+    const VoidShapes = () => (
+      <React.Fragment>
+        <ellipse cx="432" cy="493" rx="157" ry="43" transform="rotate(41 432 493)" />
+        <ellipse cx="349" cy="689" rx="39" ry="70" transform="rotate(19 349 689)" />
+      </React.Fragment>
+    );
+
     const CleanFloorPlan = () => (
       <g>
         <defs>
@@ -428,25 +445,25 @@
             <stop offset="0%"   stopColor="rgba(255,255,255,0.92)" />
             <stop offset="100%" stopColor="rgba(226,238,252,0.55)" />
           </radialGradient>
+          {/* 점령 오버레이는 복도 안에서만 보이고, 비사용 공간은 도려낸다 */}
+          <mask id="corridorMask">
+            <g fill="#fff"><CorridorShapes /></g>
+            <g fill="#000"><VoidShapes /></g>
+          </mask>
+          <filter id="zoneSpread" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="17" />
+          </filter>
         </defs>
 
         {/* 건물 외곽 — 유리판 위의 종이처럼 */}
         <circle cx="450" cy="450" r="438" fill="url(#paperGlow)" />
 
         {/* 주행 가능 복도 */}
-        <g fill="url(#corridorGrad)">
-          <rect x="440" y="42" width="96" height="120" rx="14" />
-          <rect x="365" y="108" width="106" height="247" rx="18" />
-          <rect x="160" y="286" width="690" height="114" rx="18" />
-          <path d="M270 366 C252 430 250 520 247 615 C244 700 239 760 282 801 C312 829 357 823 389 790 C427 751 446 709 492 688 C533 670 586 688 619 661 C660 628 659 586 635 540 L562 398 C506 369 410 356 333 357 C303 358 282 361 270 366 Z" />
-        </g>
+        <g fill="url(#corridorGrad)"><CorridorShapes /></g>
 
         {/* 비사용 공간 (복도에서 도려냄) — 도형마다 그라데이션이 따로 잡히면
             금속처럼 번들거려서 평평한 색으로 채운다 */}
-        <g fill="#f4f7fd" stroke="rgba(43,58,85,0.16)" strokeWidth="1">
-          <ellipse cx="432" cy="493" rx="157" ry="43" transform="rotate(41 432 493)" />
-          <ellipse cx="349" cy="689" rx="39" ry="70" transform="rotate(19 349 689)" />
-        </g>
+        <g fill="#f4f7fd" stroke="rgba(43,58,85,0.16)" strokeWidth="1"><VoidShapes /></g>
       </g>
     );
 
@@ -550,23 +567,29 @@
 
     // ============ 지도 ============
     const FloorMap = ({ zoneData, onZoneClick, selectedZone, heatmapMode = false, teamId = null, landmarksMode = false }) => {
-      const getPinFill = (zone, visited) => {
-        if (heatmapMode) {
-          let values = [];
-          if (teamId) {
-            const v = zoneData[teamId]?.[zone.code]?.radiation;
-            if (v !== undefined && v !== '') values.push(parseFloat(v));
-          } else {
-            TEAMS.forEach(t => {
-              const v = zoneData[t.id]?.[zone.code]?.radiation;
-              if (v !== undefined && v !== '') values.push(parseFloat(v));
-            });
+      // 팀 화면·팀 필터는 그 팀 기준, 전체 보기는 아무 팀이나 입력했으면 정복
+      const isVisited = (code) => teamId
+        ? !!zoneData[teamId]?.[code]
+        : TEAMS.some(t => !!zoneData[t.id]?.[code]);
+      // 구역 방사선량: 팀 화면은 그 팀 값, 전체 보기는 팀 평균
+      const zoneRadiation = (code) => {
+        const ids = teamId ? [teamId] : TEAMS.map(t => t.id);
+        const vals = [];
+        ids.forEach(id => {
+          const v = zoneData[id]?.[code]?.radiation;
+          if (v !== undefined && v !== null && v !== '') {
+            const f = parseFloat(v);
+            if (!isNaN(f)) vals.push(f);
           }
-          if (values.length === 0) return EMPTY_PIN;
-          const avg = values.reduce((a, b) => a + b, 0) / values.length;
-          return getRadiationColor(avg) || EMPTY_PIN;
-        }
+        });
+        return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+      };
+      const getPinFill = (zone, visited) => {
+        const avg = zoneRadiation(zone.code);
+        if (heatmapMode) return avg === null ? EMPTY_PIN : getRadiationColor(avg);
         if (!visited) return WHITE_PIN;
+        if (avg !== null) return getRadiationColor(avg);
+        // 저장은 했지만 방사선량을 비워둔 경우
         if (landmarksMode) return zone.color;
         const team = TEAMS.find(t => t.id === teamId);
         return team ? team.color : zone.color;
@@ -576,12 +599,24 @@
       return (
         <svg viewBox="0 0 900 900" style={{ width: '100%', maxWidth: '780px', height: 'auto', display: 'block', margin: '0 auto' }}>
           <CleanFloorPlan />
+          {/* 점령 영역: 데이터를 입력한 구역 주변 복도가 방사선 색으로 물든다.
+              번짐(blur)이 먼저 적용되고 마스크가 나중이라, 색은 부드럽게 퍼지되
+              복도 경계 밖과 비사용 공간으로는 절대 새지 않는다 */}
+          <g mask="url(#corridorMask)" filter="url(#zoneSpread)" style={{ pointerEvents: 'none' }}>
+            {ZONES.map(zone => {
+              if (!isVisited(zone.code)) return null;
+              const avg = zoneRadiation(zone.code);
+              const noReading = avg === null;
+              return (
+                <circle key={zone.code} cx={zone.x} cy={zone.y} r="86"
+                        fill={noReading ? '#e2e8f0' : getRadiationColor(avg)}
+                        opacity={noReading ? 0.4 : 0.72} />
+              );
+            })}
+          </g>
           {ZONES.map((zone, i) => {
             const isSelected = selectedZone === zone.code;
-            // 정복 여부: 팀 화면·팀 필터는 그 팀 기준, 전체 보기는 아무 팀이나 입력했으면 정복
-            const visited = teamId
-              ? !!zoneData[teamId]?.[zone.code]
-              : TEAMS.some(t => !!zoneData[t.id]?.[zone.code]);
+            const visited = isVisited(zone.code);
             const pinFill = getPinFill(zone, visited);
             const r = isSelected ? 23 : 21;
             const hasBridge = landmarksMode && zoneWithBridge(zone.code);
@@ -740,6 +775,13 @@
           <div className="glass rise" style={{ padding: '14px', marginTop: '14px', animationDelay: '.08s' }}>
             <p className="faint" style={{ margin: '0 0 10px', fontSize: '0.7812rem', textAlign: 'center', fontWeight: 500 }}>구역 핀을 탭하여 데이터 입력</p>
             <FloorMap zoneData={data} onZoneClick={setSelectedZone} teamId={teamId} selectedZone={selectedZone} />
+            <div className="fade" style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.6875rem' }}>
+              <span className="faint" style={{ fontWeight: 600 }}>낮음</span>
+              <div style={{ display: 'flex', borderRadius: '999px', overflow: 'hidden', boxShadow: '0 3px 10px rgba(49,73,122,0.2)' }}>
+                {HEAT.map(c => <div key={c} style={{ width: '32px', height: '12px', background: c }} />)}
+              </div>
+              <span className="faint" style={{ fontWeight: 600 }}>높음 (mSv/h)</span>
+            </div>
           </div>
 
           {selectedZone && (
@@ -755,7 +797,6 @@
     const AdminView = ({ data, onBack }) => {
       const [mode, setMode] = useState('heatmap');
       const [selectedTeam, setSelectedTeam] = useState(null);
-      const HEAT = ['#22c55e', '#eab308', '#f97316', '#ef4444', '#7f1d1d'];
       return (
         <div style={{ padding: '18px 16px 36px', maxWidth: '840px', margin: '0 auto' }}>
           <div className="rise" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
