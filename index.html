@@ -185,6 +185,24 @@
     }
 
     /* 세그먼트 탭 */
+    /* 팀 비교 대시보드 */
+    .board-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 11px; }
+    .board-card { padding: 11px 11px 9px; }
+    .board-head { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+    .board-dot {
+      width: 1.35rem; height: 1.35rem; border-radius: 50%; flex: none;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono); font-size: 0.6875rem; font-weight: 800; color: #fff;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+    }
+    .board-name { font-size: 0.7812rem; font-weight: 700; flex: 1; }
+    .board-count { font-family: var(--mono); font-size: 0.7188rem; color: var(--text-dim); font-weight: 600; }
+    .board-bar { background: rgba(43,58,85,0.12); height: 4px; border-radius: 2px; overflow: hidden; margin-bottom: 8px; }
+    .board-bar > div { height: 100%; border-radius: 2px; transition: width .3s var(--ease); }
+    .board-found { display: flex; gap: 9px; margin-top: 7px; font-size: 0.6875rem; color: var(--text-dim); font-weight: 600; }
+    .board-found span { display: flex; align-items: center; gap: 3px; }
+    .board-empty { font-size: 0.6875rem; color: var(--text-faint); margin-top: 7px; text-align: center; }
+
     .seg {
       flex: 1; padding: 0.8125rem 0.625rem; border-radius: 15px; font-size: 0.8125rem; font-weight: 600;
       display: flex; align-items: center; justify-content: center; gap: 7px;
@@ -450,36 +468,36 @@
       </React.Fragment>
     );
 
-    const CleanFloorPlan = () => (
+    const CleanFloorPlan = ({ uid, simple = false }) => (
       <g>
         <defs>
-          <linearGradient id="corridorGrad" x1="0" y1="0" x2="0.35" y2="1">
+          <linearGradient id={`${uid}-corridorGrad`} x1="0" y1="0" x2="0.35" y2="1">
             <stop offset="0%"   stopColor="#3b4c6b" />
             <stop offset="100%" stopColor="#233149" />
           </linearGradient>
-          <radialGradient id="paperGlow" cx="50%" cy="38%" r="64%">
+          <radialGradient id={`${uid}-paperGlow`} cx="50%" cy="38%" r="64%">
             <stop offset="0%"   stopColor="rgba(255,255,255,0.92)" />
             <stop offset="100%" stopColor="rgba(226,238,252,0.55)" />
           </radialGradient>
           {/* 점령 오버레이는 복도 안에서만 보이고, 비사용 공간은 도려낸다 */}
-          <mask id="corridorMask">
+          <mask id={`${uid}-corridorMask`}>
             <g fill="#fff"><CorridorShapes /></g>
             <g fill="#000"><VoidShapes /></g>
           </mask>
           {/* 셀 경계를 노이즈로 흔들어 유기적인 오염 확산처럼 보이게 하고,
               마지막 blur가 인접 셀 색을 이음새에서 그라데이션으로 섞는다 */}
-          <filter id="zoneSpread" x="-40%" y="-40%" width="180%" height="180%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.028" numOctaves="3" seed="11" result="noise" />
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="34" xChannelSelector="R" yChannelSelector="G" />
-            <feGaussianBlur stdDeviation="7" />
+          <filter id={`${uid}-zoneSpread`} x="-40%" y="-40%" width="180%" height="180%">
+            {!simple && <feTurbulence type="fractalNoise" baseFrequency="0.028" numOctaves="3" seed="11" result="noise" />}
+            {!simple && <feDisplacementMap in="SourceGraphic" in2="noise" scale="34" xChannelSelector="R" yChannelSelector="G" />}
+            <feGaussianBlur stdDeviation={simple ? 5 : 7} />
           </filter>
         </defs>
 
         {/* 건물 외곽 — 유리판 위의 종이처럼 */}
-        <circle cx="450" cy="450" r="438" fill="url(#paperGlow)" />
+        <circle cx="450" cy="450" r="438" fill={`url(#${uid}-paperGlow)`} />
 
         {/* 주행 가능 복도 */}
-        <g fill="url(#corridorGrad)"><CorridorShapes /></g>
+        <g fill={`url(#${uid}-corridorGrad)`}><CorridorShapes /></g>
 
         {/* 비사용 공간 (복도에서 도려냄) — 도형마다 그라데이션이 따로 잡히면
             금속처럼 번들거려서 평평한 색으로 채운다 */}
@@ -608,7 +626,8 @@
     const navigate = (route) => { window.location.hash = route; };
 
     // ============ 지도 ============
-    const FloorMap = ({ zoneData, onZoneClick, selectedZone, heatmapMode = false, teamId = null, landmarksMode = false }) => {
+    const FloorMap = ({ zoneData, onZoneClick, selectedZone, heatmapMode = false, teamId = null,
+                       landmarksMode = false, compact = false, uid = 'map' }) => {
       // 팀 화면·팀 필터는 그 팀 기준, 전체 보기는 아무 팀이나 입력했으면 정복
       const isVisited = (code) => teamId
         ? !!zoneData[teamId]?.[code]
@@ -639,12 +658,12 @@
       const zoneWithBridge = (code) => TEAMS.some(t => zoneData[t.id]?.[code]?.bridge);
       const zoneWithCapsule = (code) => TEAMS.some(t => zoneData[t.id]?.[code]?.capsule);
       return (
-        <svg viewBox="0 0 900 900" style={{ width: '100%', maxWidth: '780px', height: 'auto', display: 'block', margin: '0 auto' }}>
-          <CleanFloorPlan />
+        <svg viewBox="0 0 900 900" style={{ width: '100%', maxWidth: compact ? 'none' : '780px', height: 'auto', display: 'block', margin: '0 auto' }}>
+          <CleanFloorPlan uid={uid} simple={compact} />
           {/* 점령 영역: 각 핀의 전용 셀(ZONE_CELLS)만 방사선 색으로 칠한다.
               셀들이 지도를 빈틈없이 타일링하므로 자기 구역은 꽉 차되
               이웃 구역은 침범하지 않고, 마스크가 복도 밖을 잘라낸다 */}
-          <g mask="url(#corridorMask)" filter="url(#zoneSpread)" style={{ pointerEvents: 'none' }}>
+          <g mask={`url(#${uid}-corridorMask)`} filter={`url(#${uid}-zoneSpread)`} style={{ pointerEvents: 'none' }}>
             {ZONES.map(zone => {
               if (!isVisited(zone.code)) return null;
               const avg = zoneRadiation(zone.code);
@@ -682,11 +701,13 @@
                   <circle cx={zone.x} cy={zone.y} r={r} fill={pinFill} />
                   <ellipse cx={zone.x} cy={zone.y - r * 0.44} rx={r * 0.58} ry={r * 0.28} fill="rgba(255,255,255,0.38)" style={{ pointerEvents: 'none' }} />
                 </g>
-                <text x={zone.x} y={zone.y + 6} textAnchor="middle" fontSize="16" fontWeight="bold"
-                      fill={labelFill} style={{ pointerEvents: 'none' }}>
-                  {zone.code}
-                </text>
-                {visited && !heatmapMode && !landmarksMode && (
+                {!compact && (
+                  <text x={zone.x} y={zone.y + 6} textAnchor="middle" fontSize="16" fontWeight="bold"
+                        fill={labelFill} style={{ pointerEvents: 'none' }}>
+                    {zone.code}
+                  </text>
+                )}
+                {visited && !heatmapMode && !landmarksMode && !compact && (
                   <g style={{ pointerEvents: 'none' }}>
                     <circle cx={zone.x + r * 0.7} cy={zone.y - r * 0.7} r="11" fill="#10b981" stroke="#fff" strokeWidth="2.5" />
                     <MapIcon name="check" cx={zone.x + r * 0.7} cy={zone.y - r * 0.7} size={14} color="#fff" />
@@ -694,14 +715,14 @@
                 )}
                 {hasBridge && (
                   <g style={{ pointerEvents: 'none' }}>
-                    <circle cx={zone.x - r * 0.7} cy={zone.y - r * 0.8} r="17.5" fill="#1f2937" stroke="#fff" strokeWidth="2.5" />
-                    <MapIcon name="bridge" cx={zone.x - r * 0.7} cy={zone.y - r * 0.8} size={23} color="#fff" />
+                    <circle cx={zone.x - r * 0.7} cy={zone.y - r * 0.8} r={compact ? 27 : 17.5} fill="#1f2937" stroke="#fff" strokeWidth={compact ? 4 : 2.5} />
+                    <MapIcon name="bridge" cx={zone.x - r * 0.7} cy={zone.y - r * 0.8} size={compact ? 35 : 23} color="#fff" />
                   </g>
                 )}
                 {hasCapsule && (
                   <g style={{ pointerEvents: 'none' }}>
-                    <circle cx={zone.x + r * 0.7} cy={capY} r="17.5" fill="#f59e0b" stroke="#fff" strokeWidth="2.5" />
-                    <MapIcon name="capsule" cx={zone.x + r * 0.7} cy={capY} size={23} color="#fff" />
+                    <circle cx={zone.x + r * 0.7} cy={capY} r={compact ? 27 : 17.5} fill="#f59e0b" stroke="#fff" strokeWidth={compact ? 4 : 2.5} />
+                    <MapIcon name="capsule" cx={zone.x + r * 0.7} cy={capY} size={compact ? 35 : 23} color="#fff" />
                   </g>
                 )}
               </g>
@@ -883,6 +904,9 @@
             <button className={mode === 'landmarks' ? 'seg seg-on ripple' : 'seg ripple'} onClick={() => setMode('landmarks')}>
               <Icon name="bridge" size={17} /><Icon name="capsule" size={17} /><span>교량 · 캡슐</span>
             </button>
+            <button className={mode === 'board' ? 'seg seg-on ripple' : 'seg ripple'} onClick={() => setMode('board')}>
+              <Icon name="board" size={17} /><span>팀 비교</span>
+            </button>
           </div>
 
           {mode === 'heatmap' && (
@@ -898,6 +922,40 @@
             </div>
           )}
 
+          {mode === 'board' && (
+            <div className="board-grid rise" style={{ animationDelay: '.18s' }}>
+              {TEAMS.map(team => {
+                const td = data[team.id] || {};
+                const done = Object.keys(td).length;
+                const bridges = ZONES.filter(z => td[z.code]?.bridge).length;
+                const capsules = ZONES.filter(z => td[z.code]?.capsule).length;
+                return (
+                  <div key={team.id} className="glass board-card">
+                    <div className="board-head">
+                      <div className="board-dot" style={{ background: `linear-gradient(150deg, ${team.color}, ${team.deep})` }}>{team.id}</div>
+                      <span className="board-name">{team.name}</span>
+                      <span className="board-count">{done}/{ZONES.length}</span>
+                    </div>
+                    <div className="board-bar">
+                      <div style={{ width: `${(done / ZONES.length) * 100}%`, background: `linear-gradient(90deg, ${team.color}, ${team.deep})` }} />
+                    </div>
+                    {/* 각 팀 지도: 방사선 영역 색 + 그 팀이 찾은 교량·캡슐이 함께 들어간다 */}
+                    <FloorMap zoneData={data} teamId={team.id} compact uid={`t${team.id}`} />
+                    {done === 0
+                      ? <div className="board-empty">아직 기록 없음</div>
+                      : (bridges || capsules) ? (
+                          <div className="board-found">
+                            {bridges > 0 && <span><Icon name="bridge" size={13} />교량 {bridges}</span>}
+                            {capsules > 0 && <span><Icon name="capsule" size={13} />캡슐 {capsules}</span>}
+                          </div>
+                        ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {mode !== 'board' && (
           <div className="glass rise" style={{ padding: '14px', animationDelay: '.18s' }}>
             <FloorMap zoneData={data} heatmapMode={mode === 'heatmap'} teamId={selectedTeam} landmarksMode={mode === 'landmarks'} />
             {mode === 'heatmap' && (
@@ -916,6 +974,7 @@
               </div>
             )}
           </div>
+          )}
         </div>
       );
     };
@@ -958,7 +1017,7 @@
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b13 · label contrast';
+    const APP_BUILD = 'b14 · team board';
 
     function App() {
       const [route, setRoute] = useState(parseHash());
