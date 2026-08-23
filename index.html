@@ -1013,7 +1013,8 @@
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b15';
+    const APP_BUILD = 'b16 · auto-update';
+    const UPDATE_CHECK_MS = 60000;
 
     function App() {
       const [route, setRoute] = useState(parseHash());
@@ -1026,6 +1027,34 @@
         const handleHash = () => setRoute(parseHash());
         window.addEventListener('hashchange', handleHash);
         return () => window.removeEventListener('hashchange', handleHash);
+      }, []);
+
+      // 새 버전 자동 반영.
+      // GitHub Pages가 Cache-Control: max-age=600 을 내려주고 "홈 화면에 추가"로
+      // 만든 앱은 더 오래 붙잡기 때문에, 배포해도 태블릿이 옛 화면을 계속 보여준다.
+      // 배포본을 캐시 없이 읽어 APP_BUILD가 다르면 새 주소로 다시 연다.
+      useEffect(() => {
+        let stopped = false;
+        const check = async () => {
+          if (stopped) return;
+          // 입력 창이 열려 있으면 건드리지 않는다 — 학생이 타이핑 중인 값을 날리면 안 된다
+          if (document.querySelector('.glass-strong')) return;
+          try {
+            const res = await fetch(`${location.pathname}?cb=${Date.now()}`, { cache: 'no-store' });
+            if (!res.ok || stopped) return;
+            const m = (await res.text()).match(/APP_BUILD = '([^']*)'/);
+            if (!m || stopped) return;
+            const latest = m[1];
+            if (latest === APP_BUILD) return;
+            // 새 주소로 열어도 여전히 옛 버전이면 무한 새로고침이 되므로 한 번만 시도
+            if (sessionStorage.getItem('reloadedFor') === latest) return;
+            sessionStorage.setItem('reloadedFor', latest);
+            location.replace(`${location.pathname}?v=${encodeURIComponent(latest)}${location.hash}`);
+          } catch (e) { /* 오프라인이면 다음 주기에 */ }
+        };
+        check();
+        const t = setInterval(check, UPDATE_CHECK_MS);
+        return () => { stopped = true; clearInterval(t); };
       }, []);
 
       // 실시간 수신(SSE) + 실패 시 폴링 폴백.
