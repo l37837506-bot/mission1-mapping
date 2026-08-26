@@ -185,6 +185,38 @@
     }
 
     /* 세그먼트 탭 */
+    /* 소품 팔레트 · 드래그 */
+    .tray { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .tray-chip {
+      touch-action: none;            /* 드래그 중 페이지가 같이 스크롤되지 않게 */
+      -webkit-user-select: none; user-select: none;
+      width: 5.1rem; padding: 8px 4px 7px; border-radius: 15px;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      border: 1px solid var(--edge-soft);
+      background: rgba(255, 255, 255, 0.52);
+      -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+      font-size: 0.625rem; font-weight: 700; color: var(--text-dim);
+      cursor: grab; text-align: center; line-height: 1.25;
+      transition: transform .16s var(--ease), opacity .2s;
+    }
+    .tray-chip:active { cursor: grabbing; transform: scale(0.94); }
+    .tray-chip.done { opacity: 0.36; cursor: default; }
+    .tray-mark {
+      width: 2.15rem; height: 2.15rem; display: flex; align-items: center; justify-content: center;
+      color: #fff; box-shadow: 0 4px 12px rgba(49,73,122,0.22);
+    }
+    .tray-mark.hex { clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); border-radius: 3px; }
+    .tray-mark.sq  { border-radius: 11px; }
+    .drag-ghost {
+      position: fixed; z-index: 400; pointer-events: none;
+      transform: translate(-50%, -50%); opacity: 0.92;
+      filter: drop-shadow(0 8px 18px rgba(23,35,59,0.4));
+    }
+    .drop-hint {
+      position: absolute; inset: 0; border-radius: 18px; pointer-events: none;
+      border: 2px dashed rgba(99,102,241,0.75); background: rgba(99,102,241,0.07);
+    }
+
     /* 팀 비교 대시보드 */
     .board-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 11px; }
     .board-card { padding: 11px 11px 9px; }
@@ -430,6 +462,86 @@
         </g>
       ),
       check: <path d="M5 12.5 10 17.4 19 7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />,
+
+      // 장애물: 육각기둥 + 유해물질 경고 표식
+      obstacle: (
+        <g {...STROKE}>
+          <path d="M6 6.5 9 4h6l3 2.5v9L15 18H9l-3-2.5Z" />
+          <path d="M6 6.5 9 9h6l3-2.5" />
+          <path d="M9 9v9M15 9v9" />
+          <path d="M12 11.4 14.1 15.2H9.9Z" fill="currentColor" stroke="none" />
+        </g>
+      ),
+      // 원자로 건물: 격납 돔
+      reactor: (
+        <g {...STROKE}>
+          <path d="M4.5 20v-6.5a7.5 7.5 0 0 1 15 0V20" />
+          <path d="M3 20h18" />
+          <path d="M12 20v-5" />
+        </g>
+      ),
+      // 냉각수 처리동: 냉각탑 + 수증기
+      coolant: (
+        <g {...STROKE}>
+          <path d="M5.5 20c1.6-5.5 3.5-8 3.5-12h6c0 4 1.9 6.5 3.5 12Z" />
+          <path d="M9 8h6" />
+          <path d="M9.8 4.6c.9-1 1.4-1 2.2 0s1.3 1 2.2 0" />
+        </g>
+      ),
+      // 전력제어실: 건물 + 전력 기호
+      control: (
+        <g {...STROKE}>
+          <path d="M4.5 20V9.8L12 5.6l7.5 4.2V20Z" />
+          <path d="M3 20h18" />
+          <path d="M12.9 10.6 10.3 15h2.2l-.8 3.1L14.1 13.6h-2.1Z" fill="currentColor" stroke="none" />
+        </g>
+      ),
+    };
+
+    // ============ 배치 소품 ============
+    // 실제 공간에 놓이는 물건들. 학생이 발견하면 팔레트에서 끌어다 지도에 놓는다.
+    // 장애물 3개는 서로 같은 물건이라 id만 다르다.
+    const PROPS = [
+      { id: 'obs1',    type: 'obstacle', name: '장애물' },
+      { id: 'obs2',    type: 'obstacle', name: '장애물' },
+      { id: 'obs3',    type: 'obstacle', name: '장애물' },
+      { id: 'reactor', type: 'reactor',  name: '원자로 건물' },
+      { id: 'coolant', type: 'coolant',  name: '냉각수 처리동' },
+      { id: 'control', type: 'control',  name: '전력제어실' },
+    ];
+    // 장애물은 육각형 토큰, 건물은 둥근 사각 토큰 — 색뿐 아니라 모양으로도 구분해
+    // 기존 교량(어두운 원)·캡슐(호박색 원) 배지와 헷갈리지 않게 한다.
+    const PROP_STYLE = {
+      obstacle: { fill: '#facc15', ink: '#422006' },
+      reactor:  { fill: '#0e7490', ink: '#fff' },
+      coolant:  { fill: '#0284c7', ink: '#fff' },
+      control:  { fill: '#7c3aed', ink: '#fff' },
+    };
+    const propById = (id) => PROPS.find(p => p.id === id);
+
+    // 뾰족한 위쪽 정육각형
+    const hexPoints = (cx, cy, r) => {
+      const pts = [];
+      for (let k = 0; k < 6; k++) {
+        const a = (Math.PI / 180) * (60 * k - 90);
+        pts.push(`${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`);
+      }
+      return pts.join(' ');
+    };
+
+    // 지도 위 소품 토큰
+    const PropToken = ({ type, x, y, r = 30 }) => {
+      const st = PROP_STYLE[type] || PROP_STYLE.obstacle;
+      return (
+        <g style={{ pointerEvents: 'none' }}>
+          <ellipse cx={x + 1} cy={y + r * 0.78} rx={r * 0.95} ry={r * 0.3} fill="rgba(23,35,59,0.3)" />
+          {type === 'obstacle'
+            ? <polygon points={hexPoints(x, y, r)} fill={st.fill} stroke="#fff" strokeWidth="3.5" strokeLinejoin="round" />
+            : <rect x={x - r * 0.92} y={y - r * 0.92} width={r * 1.84} height={r * 1.84} rx={r * 0.4}
+                    fill={st.fill} stroke="#fff" strokeWidth="3.5" />}
+          <MapIcon name={type} cx={x} cy={y} size={r * 1.45} color={st.ink} />
+        </g>
+      );
     };
 
     // HTML 안에서 쓰는 인라인 아이콘
@@ -566,6 +678,23 @@
         if (!res.ok) throw new Error('저장 실패: ' + res.status);
         return await res.json();
       },
+      // 소품은 markers/ 아래에 둔다. 팀 노드에 넣으면 진행률이
+      // Object.keys(data[teamId]).length 라서 구역 수로 잘못 세어진다.
+      async setMarker(teamId, propId, value) {
+        const url = `${DATABASE_URL}/${DB_PATH}/markers/${teamId}/${propId}.json`;
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(value),
+        });
+        if (!res.ok) throw new Error('배치 저장 실패: ' + res.status);
+        return await res.json();
+      },
+      async deleteMarker(teamId, propId) {
+        const url = `${DATABASE_URL}/${DB_PATH}/markers/${teamId}/${propId}.json`;
+        const res = await fetch(url, { method: 'DELETE' });
+        if (!res.ok) throw new Error('배치 삭제 실패: ' + res.status);
+      },
       async deleteAll() {
         const res = await fetch(`${DATABASE_URL}/${DB_PATH}.json`, { method: 'DELETE' });
         if (!res.ok) throw new Error('삭제 실패: ' + res.status);
@@ -627,7 +756,8 @@
 
     // ============ 지도 ============
     const FloorMap = ({ zoneData, onZoneClick, selectedZone, heatmapMode = false, teamId = null,
-                       landmarksMode = false, compact = false, uid = 'map' }) => {
+                       landmarksMode = false, compact = false, uid = 'map',
+                       markers = null, onMarkerGrab = null }) => {
       // 팀 화면·팀 필터는 그 팀 기준, 전체 보기는 아무 팀이나 입력했으면 정복
       const isVisited = (code) => teamId
         ? !!zoneData[teamId]?.[code]
@@ -728,6 +858,20 @@
               </g>
             );
           })}
+          {/* 배치된 소품 — 핀 위에 얹는다 */}
+          {markers && Object.keys(markers).map(id => {
+            const m = markers[id];
+            if (!m || typeof m.x !== 'number' || typeof m.y !== 'number') return null;
+            const prop = propById(id);
+            if (!prop) return null;
+            return (
+              <g key={id}
+                 style={{ cursor: onMarkerGrab ? 'grab' : 'default', touchAction: 'none' }}
+                 onPointerDown={onMarkerGrab ? (e) => onMarkerGrab(e, id) : undefined}>
+                <PropToken type={prop.type} x={m.x} y={m.y} r={compact ? 46 : 30} />
+              </g>
+            );
+          })}
         </svg>
       );
     };
@@ -815,10 +959,54 @@
     };
 
     // ============ 팀 뷰 ============
-    const TeamView = ({ teamId, data, onSave, onBack }) => {
+    const TeamView = ({ teamId, data, onSave, onBack, onPlaceProp, onRemoveProp }) => {
       const [selectedZone, setSelectedZone] = useState(null);
+      const [drag, setDrag] = useState(null);   // { id, type, cx, cy, fromMap }
+      const mapRef = useRef(null);
       const team = TEAMS.find(t => t.id === teamId);
       const teamData = data[teamId] || {};
+      const markers = (data.markers && data.markers[teamId]) || {};
+
+      const beginDrag = (e, id, fromMap) => {
+        const prop = propById(id);
+        if (!prop) return;
+        e.preventDefault();
+        setDrag({ id, type: prop.type, cx: e.clientX, cy: e.clientY, fromMap });
+      };
+
+      // 드래그는 포인터 이벤트로 직접 처리한다. HTML5 drag&drop은
+      // iOS 사파리 터치에서 아예 발생하지 않아 태블릿에서 쓸 수 없다.
+      useEffect(() => {
+        if (!drag) return;
+        const move = (e) => setDrag(d => d && ({ ...d, cx: e.clientX, cy: e.clientY }));
+        const finish = (e) => {
+          const svg = mapRef.current && mapRef.current.querySelector('svg');
+          const box = svg && svg.getBoundingClientRect();
+          const inside = box && e.clientX >= box.left && e.clientX <= box.right
+                             && e.clientY >= box.top  && e.clientY <= box.bottom;
+          if (svg && inside) {
+            const pt = svg.createSVGPoint();
+            pt.x = e.clientX; pt.y = e.clientY;
+            const q = pt.matrixTransform(svg.getScreenCTM().inverse());
+            // 건물 원 밖으로 나가면 테두리 안쪽으로 끌어당긴다
+            let x = q.x, y = q.y;
+            const dx = x - 450, dy = y - 450, d = Math.hypot(dx, dy), LIM = 404;
+            if (d > LIM) { x = 450 + dx / d * LIM; y = 450 + dy / d * LIM; }
+            onPlaceProp(drag.id, Math.round(x), Math.round(y));
+          } else if (drag.fromMap) {
+            onRemoveProp(drag.id);   // 지도 밖으로 끌어내면 회수
+          }
+          setDrag(null);
+        };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', finish);
+        window.addEventListener('pointercancel', () => setDrag(null));
+        return () => {
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', finish);
+        };
+      }, [drag, onPlaceProp, onRemoveProp]);
+
       const completedCount = Object.keys(teamData).length;
       const pct = (completedCount / ZONES.length) * 100;
       return (
@@ -843,7 +1031,11 @@
 
           <div className="glass rise" style={{ padding: '14px', marginTop: '14px', animationDelay: '.08s' }}>
             <p className="faint" style={{ margin: '0 0 10px', fontSize: '0.7812rem', textAlign: 'center', fontWeight: 500 }}>구역 핀을 탭하여 데이터 입력</p>
-            <FloorMap zoneData={data} onZoneClick={setSelectedZone} teamId={teamId} selectedZone={selectedZone} />
+            <div ref={mapRef} style={{ position: 'relative' }}>
+              <FloorMap zoneData={data} onZoneClick={setSelectedZone} teamId={teamId} selectedZone={selectedZone}
+                        markers={markers} onMarkerGrab={(e, id) => beginDrag(e, id, true)} />
+              {drag && <div className="drop-hint" />}
+            </div>
             <div className="fade" style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.6875rem' }}>
               <span className="faint" style={{ fontWeight: 600 }}>낮음</span>
               <div style={{ display: 'flex', borderRadius: '999px', overflow: 'hidden', boxShadow: '0 3px 10px rgba(49,73,122,0.2)' }}>
@@ -852,6 +1044,40 @@
               <span className="faint" style={{ fontWeight: 600 }}>높음 (mSv/h)</span>
             </div>
           </div>
+
+          <div className="glass rise" style={{ padding: '13px 12px 11px', marginTop: '14px', animationDelay: '.14s' }}>
+            <p className="faint" style={{ margin: '0 0 10px', fontSize: '0.7812rem', textAlign: 'center', fontWeight: 500 }}>
+              발견한 물건을 지도로 끌어다 놓으세요
+            </p>
+            <div className="tray">
+              {PROPS.map(prop => {
+                const placed = !!markers[prop.id];
+                const st = PROP_STYLE[prop.type];
+                return (
+                  <div key={prop.id}
+                       className={placed ? 'tray-chip done' : 'tray-chip'}
+                       onPointerDown={placed ? undefined : (e) => beginDrag(e, prop.id, false)}>
+                    <div className={'tray-mark ' + (prop.type === 'obstacle' ? 'hex' : 'sq')}
+                         style={{ background: st.fill, color: st.ink }}>
+                      <Icon name={prop.type} size={19} />
+                    </div>
+                    <span>{placed ? '배치됨' : prop.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="faint" style={{ margin: '9px 0 0', fontSize: '0.625rem', textAlign: 'center' }}>
+              놓은 물건은 다시 끌어 옮길 수 있고, 지도 밖으로 끌면 회수됩니다
+            </p>
+          </div>
+
+          {drag && (
+            <div className="drag-ghost" style={{ left: drag.cx, top: drag.cy }}>
+              <svg width="58" height="58" viewBox="0 0 100 100">
+                <PropToken type={drag.type} x={50} y={50} r={34} />
+              </svg>
+            </div>
+          )}
 
           {selectedZone && (
             <InputForm zone={selectedZone} currentData={teamData[selectedZone]}
@@ -865,6 +1091,9 @@
     // ============ 강사 뷰 ============
     const AdminView = ({ data, onBack }) => {
       const [mode, setMode] = useState('heatmap');
+      // 교량·캡슐 모드에서는 전 팀이 배치한 소품을 한 지도에 겹쳐 본다
+      const allMarkers = {};
+      TEAMS.forEach(t => Object.assign(allMarkers, (data.markers && data.markers[t.id]) || {}));
       const [selectedTeam, setSelectedTeam] = useState(null);
       return (
         <div style={{ padding: '18px 16px 36px', maxWidth: '840px', margin: '0 auto' }}>
@@ -940,7 +1169,8 @@
                       <div style={{ width: `${(done / ZONES.length) * 100}%`, background: `linear-gradient(90deg, ${team.color}, ${team.deep})` }} />
                     </div>
                     {/* 각 팀 지도: 방사선 영역 색 + 그 팀이 찾은 교량·캡슐이 함께 들어간다 */}
-                    <FloorMap zoneData={data} teamId={team.id} compact uid={`t${team.id}`} />
+                    <FloorMap zoneData={data} teamId={team.id} compact uid={`t${team.id}`}
+                              markers={(data.markers && data.markers[team.id]) || {}} />
                     {done === 0
                       ? <div className="board-empty">아직 기록 없음</div>
                       : (bridges || capsules) ? (
@@ -957,7 +1187,8 @@
 
           {mode !== 'board' && (
           <div className="glass rise" style={{ padding: '14px', animationDelay: '.18s' }}>
-            <FloorMap zoneData={data} heatmapMode={mode === 'heatmap'} teamId={selectedTeam} landmarksMode={mode === 'landmarks'} />
+            <FloorMap zoneData={data} heatmapMode={mode === 'heatmap'} teamId={selectedTeam} landmarksMode={mode === 'landmarks'}
+                      markers={mode === 'landmarks' ? allMarkers : null} />
             {mode === 'heatmap' && (
               <div className="fade" style={{ marginTop: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.6875rem' }}>
                 <span className="faint" style={{ fontWeight: 600 }}>낮음</span>
@@ -1013,7 +1244,7 @@
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b16 · auto-update';
+    const APP_BUILD = 'b17 · props';
     const UPDATE_CHECK_MS = 60000;
 
     function App() {
@@ -1154,6 +1385,30 @@
         } catch (e) {}
       }, []);
 
+      const handlePlaceProp = useCallback(async (teamId, propId, x, y) => {
+        setData(prev => {                     // 스트림보다 먼저 화면에 반영
+          const next = { ...prev };
+          const mk = { ...(next.markers || {}) };
+          mk[teamId] = { ...(mk[teamId] || {}), [propId]: { x, y, ts: Date.now() } };
+          next.markers = mk;
+          return next;
+        });
+        try { await api.setMarker(teamId, propId, { x, y, ts: Date.now() }); }
+        catch (e) { alert('배치 저장 실패: ' + e.message); }
+      }, []);
+
+      const handleRemoveProp = useCallback(async (teamId, propId) => {
+        setData(prev => {
+          const next = { ...prev };
+          const mk = { ...(next.markers || {}) };
+          if (mk[teamId]) { mk[teamId] = { ...mk[teamId] }; delete mk[teamId][propId]; }
+          next.markers = mk;
+          return next;
+        });
+        try { await api.deleteMarker(teamId, propId); }
+        catch (e) { alert('배치 삭제 실패: ' + e.message); }
+      }, []);
+
       const handleReset = async () => {
         if (!confirm('모든 팀의 모든 데이터를 완전히 삭제합니다. 계속?')) return;
         try {
@@ -1189,7 +1444,9 @@
               onReset={handleReset} />
           )}
           {route.view === 'team' && (
-            <TeamView teamId={route.teamId} data={data} onSave={handleSave} onBack={() => navigate('')} />
+            <TeamView teamId={route.teamId} data={data} onSave={handleSave} onBack={() => navigate('')}
+                      onPlaceProp={(id, x, y) => handlePlaceProp(route.teamId, id, x, y)}
+                      onRemoveProp={(id) => handleRemoveProp(route.teamId, id)} />
           )}
           {route.view === 'admin' && (
             <AdminView data={data} onBack={() => navigate('')} />
