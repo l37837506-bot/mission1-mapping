@@ -546,7 +546,7 @@
     };
 
     // 지도 위 소품 토큰
-    const PropToken = ({ type, x, y, r = 25, dim = false }) => {
+    const PropToken = ({ type, x, y, r = 20, dim = false }) => {
       const st = PROP_STYLE[type] || PROP_STYLE.obstacle;
       return (
         <g style={{ pointerEvents: 'none', opacity: dim ? 0.4 : 1 }}>
@@ -881,7 +881,7 @@
             const prop = propById(id);
             if (!prop) return null;
             const picked = movingProp === id;
-            const rr = compact ? 38 : 25;
+            const rr = compact ? 31 : 20;
             return (
               <g key={id} style={{ cursor: onMarkerTap ? 'pointer' : 'default' }}>
                 {picked && (
@@ -1130,7 +1130,7 @@
           {drag && (
             <div className="drag-ghost" style={{ left: drag.cx, top: drag.cy }}>
               <svg width="58" height="58" viewBox="0 0 100 100">
-                <PropToken type={drag.type} x={50} y={50} r={30} />
+                <PropToken type={drag.type} x={50} y={50} r={26} />
               </svg>
             </div>
           )}
@@ -1300,7 +1300,7 @@
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b20 · tap fix';
+    const APP_BUILD = 'b21 · smaller props';
     const UPDATE_CHECK_MS = 60000;
 
     function App() {
