@@ -185,6 +185,21 @@
     }
 
     /* 세그먼트 탭 */
+    .prop-picked { animation: pickPulse 1.5s ease-in-out infinite; }
+    @keyframes pickPulse { 0%,100% { opacity: .85; } 50% { opacity: .3; } }
+    .move-bar {
+      position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+      z-index: 260; display: flex; align-items: center; gap: 9px;
+      padding: 10px 12px 10px 15px; border-radius: 17px;
+      font-size: 0.75rem; font-weight: 600; color: var(--text);
+      background: rgba(255,255,255,0.86);
+      -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.9);
+      box-shadow: 0 12px 34px rgba(38,60,105,0.28);
+    }
+    .move-bar button { padding: 7px 12px; border-radius: 11px; font-size: 0.6875rem; font-weight: 700; border: 1px solid var(--edge-soft); background: rgba(255,255,255,0.7); }
+    .move-bar button.danger { color: var(--danger); border-color: rgba(220,38,38,0.3); }
+
     /* 소품 팔레트 · 드래그 */
     .tray { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
     .tray-chip {
@@ -530,10 +545,10 @@
     };
 
     // 지도 위 소품 토큰
-    const PropToken = ({ type, x, y, r = 30 }) => {
+    const PropToken = ({ type, x, y, r = 25, dim = false }) => {
       const st = PROP_STYLE[type] || PROP_STYLE.obstacle;
       return (
-        <g style={{ pointerEvents: 'none' }}>
+        <g style={{ pointerEvents: 'none', opacity: dim ? 0.4 : 1 }}>
           <ellipse cx={x + 1} cy={y + r * 0.78} rx={r * 0.95} ry={r * 0.3} fill="rgba(23,35,59,0.3)" />
           {type === 'obstacle'
             ? <polygon points={hexPoints(x, y, r)} fill={st.fill} stroke="#fff" strokeWidth="3.5" strokeLinejoin="round" />
@@ -757,7 +772,7 @@
     // ============ 지도 ============
     const FloorMap = ({ zoneData, onZoneClick, selectedZone, heatmapMode = false, teamId = null,
                        landmarksMode = false, compact = false, uid = 'map',
-                       markers = null, onMarkerGrab = null }) => {
+                       markers = null, movingProp = null, onMarkerTap = null, onMapTap = null }) => {
       // 팀 화면·팀 필터는 그 팀 기준, 전체 보기는 아무 팀이나 입력했으면 정복
       const isVisited = (code) => teamId
         ? !!zoneData[teamId]?.[code]
@@ -864,14 +879,33 @@
             if (!m || typeof m.x !== 'number' || typeof m.y !== 'number') return null;
             const prop = propById(id);
             if (!prop) return null;
+            const picked = movingProp === id;
+            const rr = compact ? 38 : 25;
             return (
               <g key={id}
-                 style={{ cursor: onMarkerGrab ? 'grab' : 'default', touchAction: 'none' }}
-                 onPointerDown={onMarkerGrab ? (e) => onMarkerGrab(e, id) : undefined}>
-                <PropToken type={prop.type} x={m.x} y={m.y} r={compact ? 46 : 30} />
+                 style={{ cursor: onMarkerTap ? 'pointer' : 'default' }}
+                 onClick={onMarkerTap ? (e) => { e.stopPropagation(); onMarkerTap(id); } : undefined}>
+                {picked && (
+                  <circle cx={m.x} cy={m.y} r={rr + 13} fill="none"
+                          stroke="#6366f1" strokeWidth="4" opacity="0.85" className="prop-picked" />
+                )}
+                <PropToken type={prop.type} x={m.x} y={m.y} r={rr} dim={!!movingProp && !picked} />
               </g>
             );
           })}
+          {/* 옮기는 중에는 지도 전체가 '놓을 자리' 입력을 받는다.
+              핀 클릭이 가로채지 않도록 맨 위에 투명 판을 덮는다 */}
+          {movingProp && onMapTap && (
+            <rect x="0" y="0" width="900" height="900" fill="transparent"
+                  style={{ cursor: 'crosshair' }}
+                  onClick={(e) => {
+                    const svg = e.currentTarget.ownerSVGElement;
+                    const pt = svg.createSVGPoint();
+                    pt.x = e.clientX; pt.y = e.clientY;
+                    const q = pt.matrixTransform(svg.getScreenCTM().inverse());
+                    onMapTap(q.x, q.y);
+                  }} />
+          )}
         </svg>
       );
     };
@@ -961,17 +995,18 @@
     // ============ 팀 뷰 ============
     const TeamView = ({ teamId, data, onSave, onBack, onPlaceProp, onRemoveProp }) => {
       const [selectedZone, setSelectedZone] = useState(null);
-      const [drag, setDrag] = useState(null);   // { id, type, cx, cy, fromMap }
+      const [drag, setDrag] = useState(null);      // 팔레트에서 끌어오는 중
+      const [moving, setMoving] = useState(null); // 배치된 소품을 탭해 옮기는 중
       const mapRef = useRef(null);
       const team = TEAMS.find(t => t.id === teamId);
       const teamData = data[teamId] || {};
       const markers = (data.markers && data.markers[teamId]) || {};
 
-      const beginDrag = (e, id, fromMap) => {
+      const beginDrag = (e, id) => {
         const prop = propById(id);
         if (!prop) return;
         e.preventDefault();
-        setDrag({ id, type: prop.type, cx: e.clientX, cy: e.clientY, fromMap });
+        setDrag({ id, type: prop.type, cx: e.clientX, cy: e.clientY });
       };
 
       // 드래그는 포인터 이벤트로 직접 처리한다. HTML5 drag&drop은
@@ -993,10 +1028,8 @@
             const dx = x - 450, dy = y - 450, d = Math.hypot(dx, dy), LIM = 404;
             if (d > LIM) { x = 450 + dx / d * LIM; y = 450 + dy / d * LIM; }
             onPlaceProp(drag.id, Math.round(x), Math.round(y));
-          } else if (drag.fromMap) {
-            onRemoveProp(drag.id);   // 지도 밖으로 끌어내면 회수
           }
-          setDrag(null);
+          setDrag(null);            // 지도 밖에 놓으면 그냥 취소
         };
         window.addEventListener('pointermove', move);
         window.addEventListener('pointerup', finish);
@@ -1033,7 +1066,16 @@
             <p className="faint" style={{ margin: '0 0 10px', fontSize: '0.7812rem', textAlign: 'center', fontWeight: 500 }}>구역 핀을 탭하여 데이터 입력</p>
             <div ref={mapRef} style={{ position: 'relative' }}>
               <FloorMap zoneData={data} onZoneClick={setSelectedZone} teamId={teamId} selectedZone={selectedZone}
-                        markers={markers} onMarkerGrab={(e, id) => beginDrag(e, id, true)} />
+                        markers={markers}
+                        movingProp={moving}
+                        onMarkerTap={(id) => setMoving(cur => cur === id ? null : id)}
+                        onMapTap={(x, y) => {
+                          // 건물 외곽 밖이면 테두리 안쪽으로 당긴다
+                          const dx = x - 450, dy = y - 450, d = Math.hypot(dx, dy), LIM = 404;
+                          if (d > LIM) { x = 450 + dx / d * LIM; y = 450 + dy / d * LIM; }
+                          onPlaceProp(moving, Math.round(x), Math.round(y));
+                          setMoving(null);
+                        }} />
               {drag && <div className="drop-hint" />}
             </div>
             <div className="fade" style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.6875rem' }}>
@@ -1056,7 +1098,7 @@
                 return (
                   <div key={prop.id}
                        className={placed ? 'tray-chip done' : 'tray-chip'}
-                       onPointerDown={placed ? undefined : (e) => beginDrag(e, prop.id, false)}>
+                       onPointerDown={placed ? undefined : (e) => beginDrag(e, prop.id)}>
                     <div className={'tray-mark ' + (prop.type === 'obstacle' ? 'hex' : 'sq')}
                          style={{ background: st.fill, color: st.ink }}>
                       <Icon name={prop.type} size={19} />
@@ -1067,14 +1109,22 @@
               })}
             </div>
             <p className="faint" style={{ margin: '9px 0 0', fontSize: '0.625rem', textAlign: 'center' }}>
-              놓은 물건은 다시 끌어 옮길 수 있고, 지도 밖으로 끌면 회수됩니다
+              잘못 놓았다면 지도의 물건을 탭한 뒤 옮길 자리를 다시 탭하세요
             </p>
           </div>
+
+          {moving && (
+            <div className="move-bar">
+              <span>{propById(moving) && propById(moving).name} — 옮길 자리를 탭하세요</span>
+              <button className="ripple" onClick={() => setMoving(null)}>취소</button>
+              <button className="ripple danger" onClick={() => { onRemoveProp(moving); setMoving(null); }}>회수</button>
+            </div>
+          )}
 
           {drag && (
             <div className="drag-ghost" style={{ left: drag.cx, top: drag.cy }}>
               <svg width="58" height="58" viewBox="0 0 100 100">
-                <PropToken type={drag.type} x={50} y={50} r={34} />
+                <PropToken type={drag.type} x={50} y={50} r={30} />
               </svg>
             </div>
           )}
@@ -1244,7 +1294,7 @@
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b17 · props';
+    const APP_BUILD = 'b18 · reposition';
     const UPDATE_CHECK_MS = 60000;
 
     function App() {
