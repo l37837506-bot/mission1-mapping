@@ -190,6 +190,7 @@
     .move-bar {
       position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
       z-index: 260; display: flex; align-items: center; gap: 9px;
+      pointer-events: none;          /* 바에 가린 지도 자리도 탭할 수 있게 */
       padding: 10px 12px 10px 15px; border-radius: 17px;
       font-size: 0.75rem; font-weight: 600; color: var(--text);
       background: rgba(255,255,255,0.86);
@@ -197,7 +198,7 @@
       border: 1px solid rgba(255,255,255,0.9);
       box-shadow: 0 12px 34px rgba(38,60,105,0.28);
     }
-    .move-bar button { padding: 7px 12px; border-radius: 11px; font-size: 0.6875rem; font-weight: 700; border: 1px solid var(--edge-soft); background: rgba(255,255,255,0.7); }
+    .move-bar button { pointer-events: auto; padding: 7px 12px; border-radius: 11px; font-size: 0.6875rem; font-weight: 700; border: 1px solid var(--edge-soft); background: rgba(255,255,255,0.7); }
     .move-bar button.danger { color: var(--danger); border-color: rgba(220,38,38,0.3); }
 
     /* 소품 팔레트 · 드래그 */
@@ -1299,7 +1300,7 @@
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b19 · tap fix';
+    const APP_BUILD = 'b20 · tap fix';
     const UPDATE_CHECK_MS = 60000;
 
     function App() {
