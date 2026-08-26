@@ -882,22 +882,27 @@
             const picked = movingProp === id;
             const rr = compact ? 38 : 25;
             return (
-              <g key={id}
-                 style={{ cursor: onMarkerTap ? 'pointer' : 'default' }}
-                 onClick={onMarkerTap ? (e) => { e.stopPropagation(); onMarkerTap(id); } : undefined}>
+              <g key={id} style={{ cursor: onMarkerTap ? 'pointer' : 'default' }}>
                 {picked && (
                   <circle cx={m.x} cy={m.y} r={rr + 13} fill="none"
                           stroke="#6366f1" strokeWidth="4" opacity="0.85" className="prop-picked" />
                 )}
                 <PropToken type={prop.type} x={m.x} y={m.y} r={rr} dim={!!movingProp && !picked} />
+                {/* 토큰 그림은 pointer-events:none 이므로 잡을 면을 따로 깐다.
+                    손가락으로도 편하도록 토큰보다 조금 넉넉하게 */}
+                {onMarkerTap && (
+                  <circle cx={m.x} cy={m.y} r={rr + 10} fill="#fff" fillOpacity="0.001"
+                          style={{ pointerEvents: 'all', touchAction: 'manipulation' }}
+                          onClick={(e) => { e.stopPropagation(); onMarkerTap(id); }} />
+                )}
               </g>
             );
           })}
           {/* 옮기는 중에는 지도 전체가 '놓을 자리' 입력을 받는다.
               핀 클릭이 가로채지 않도록 맨 위에 투명 판을 덮는다 */}
           {movingProp && onMapTap && (
-            <rect x="0" y="0" width="900" height="900" fill="transparent"
-                  style={{ cursor: 'crosshair' }}
+            <rect x="0" y="0" width="900" height="900" fill="#fff" fillOpacity="0.001"
+                  style={{ cursor: 'crosshair', pointerEvents: 'all' }}
                   onClick={(e) => {
                     const svg = e.currentTarget.ownerSVGElement;
                     const pt = svg.createSVGPoint();
@@ -1294,7 +1299,7 @@
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b18 · reposition';
+    const APP_BUILD = 'b19 · tap fix';
     const UPDATE_CHECK_MS = 60000;
 
     function App() {
