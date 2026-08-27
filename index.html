@@ -556,6 +556,19 @@
           <MapIcon name="home" cx={BASE.x} cy={BASE.y - r * 0.08} size={r * 1.15} color="#fff" />
           {!compact && (
             <React.Fragment>
+              {/* 출입문 — 동쪽으로 열려 δ 복도로 나간다 */}
+              <g strokeLinecap="round" fill="none">
+                {/* 문틀 (위·아래 벽) */}
+                <path d="M206 482 V500 M206 540 V558" stroke="#312e81" strokeWidth="5.5" />
+                {/* 열린 문짝 */}
+                <path d="M206 500 L233 485" stroke="#4338ca" strokeWidth="5.5" />
+                {/* 열리는 궤적 */}
+                <path d="M233 485 A31 31 0 0 1 206 531" stroke="#4338ca" strokeWidth="2"
+                      strokeDasharray="5 5" opacity="0.55" />
+                {/* 진행 방향 */}
+                <path d="M215 523 H258" stroke="#4338ca" strokeWidth="5.5" />
+                <path d="M254 514 L270 523 L254 532 Z" fill="#4338ca" stroke="none" />
+              </g>
               <rect x={BASE.x - 62} y={BASE.y + r + 8} width="124" height="27" rx="13"
                     fill="#4338ca" stroke="#fff" strokeWidth="2.5" />
               <text x={BASE.x} y={BASE.y + r + 26} textAnchor="middle" fontSize="15"
@@ -1337,7 +1350,7 @@
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b22 · home base';
+    const APP_BUILD = 'b23 · exit door';
     const UPDATE_CHECK_MS = 60000;
 
     function App() {
