@@ -452,11 +452,15 @@
       check: <path d="M5 12.5 10 17.4 19 7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />,
 
       // 조종본부 = 출발·도착 지점
+      // 조종본부 = 안테나를 세운 관제 콘솔
       home: (
         <g {...STROKE}>
-          <path d="M3.6 10.8 12 4.2l8.4 6.6" />
-          <path d="M5.7 12.4V20h12.6v-7.6" />
-          <path d="M9.2 20v-4.4h5.6V20" />
+          <path d="M8.8 3.4a4.4 4.4 0 0 1 6.4 0" />
+          <circle cx="12" cy="5.2" r="1.5" fill="currentColor" stroke="none" />
+          <path d="M12 6.7v2.7" />
+          <rect x="3.8" y="9.4" width="16.4" height="9.4" rx="2.2" />
+          <path d="M7.2 12.7h9.6M7.2 15.5h5.6" />
+          <path d="M8.4 21.4h7.2" />
         </g>
       ),
       // 장애물: 육각기둥 + 유해물질 경고 표식
@@ -1175,7 +1179,7 @@
     };
 
     // ============ 강사 뷰 ============
-    const AdminView = ({ data, onBack }) => {
+    const AdminView = ({ data, onBack, onReset }) => {
       const [mode, setMode] = useState('heatmap');
       // 교량·캡슐 모드에서는 전 팀이 배치한 소품을 한 지도에 겹쳐 본다
       const allMarkers = {};
@@ -1292,12 +1296,19 @@
             )}
           </div>
           )}
+
+          {/* 수업 전후 정리용 — 학생 화면에는 두지 않는다 */}
+          <button className="btn-glass ripple rise" onClick={onReset}
+                  style={{ width: '100%', padding: '12px', marginTop: '18px', fontSize: '0.75rem',
+                           color: 'var(--danger)', animationDelay: '.24s' }}>
+            전체 데이터 초기화
+          </button>
         </div>
       );
     };
 
     // ============ 홈 ============
-    const HomeView = ({ onSelectTeam, onSelectAdmin, onReset }) => (
+    const HomeView = ({ onSelectTeam, onSelectAdmin }) => (
       <div style={{ padding: '48px 16px 36px', maxWidth: '520px', margin: '0 auto' }}>
         <div className="rise" style={{ textAlign: 'center', marginBottom: '28px' }}>
           <div className="eyebrow" style={{ marginBottom: '10px' }}>Mission 01 · Recon Mapping</div>
@@ -1321,16 +1332,12 @@
           <Icon name="board" size={18} /><span>강사 화면 (결과 보기)</span>
         </button>
 
-        <button className="btn-glass ripple rise" onClick={onReset} style={{ width: '100%', padding: '12px', fontSize: '0.75rem', color: 'var(--danger)', animationDelay: '.42s' }}>
-          전체 데이터 초기화
-        </button>
-
       </div>
     );
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b26 · tray labels';
+    const APP_BUILD = 'b27 · hq icon';
     const UPDATE_CHECK_MS = 60000;
 
     function App() {
@@ -1527,7 +1534,7 @@
             <HomeView
               onSelectTeam={(id) => navigate(`/team/${id}`)}
               onSelectAdmin={() => navigate('/admin')}
-              onReset={handleReset} />
+              />
           )}
           {route.view === 'team' && (
             <TeamView teamId={route.teamId} data={data} onSave={handleSave} onBack={() => navigate('')}
@@ -1535,7 +1542,7 @@
                       onRemoveProp={(id) => handleRemoveProp(route.teamId, id)} />
           )}
           {route.view === 'admin' && (
-            <AdminView data={data} onBack={() => navigate('')} />
+            <AdminView data={data} onBack={() => navigate('')} onReset={handleReset} />
           )}
         </div>
       );
