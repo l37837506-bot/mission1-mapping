@@ -15,20 +15,27 @@
 
   <style>
     :root {
-      --text:        #17233b;
-      --text-dim:    #4a5a75;
-      --text-faint:  #6b7c96;
-      --accent:      #0e7490;
-      --danger:      #dc2626;
+      /* 관제실 계열 — 어두운 금속 패널 + 경고 황색 */
+      --text:        #e8edf5;
+      --text-dim:    #9fb0c7;
+      --text-faint:  #74869e;
+      --accent:      #fbbf24;   /* 경고 황색 */
+      --danger:      #f43f5e;
+      --ok:          #22c55e;
 
-      --glass-hi:    rgba(255, 255, 255, 0.62);
-      --glass-lo:    rgba(255, 255, 255, 0.30);
-      --edge:        rgba(255, 255, 255, 0.78);
-      --edge-soft:   rgba(255, 255, 255, 0.52);
-      --shadow:      0 10px 34px rgba(49, 73, 122, 0.13);
-      --shadow-lg:   0 26px 66px rgba(38, 60, 105, 0.24);
+      --panel:       #171b23;   /* 패널 면 */
+      --panel-hi:    #1f2530;   /* 밝은 면 */
+      --panel-lo:    #10131a;   /* 깊은 홈 */
+      --line:        rgba(148, 170, 200, 0.16);
+      --line-hi:     rgba(190, 210, 240, 0.30);
+      --shadow:      0 10px 30px rgba(0, 0, 0, 0.45);
+      --shadow-lg:   0 26px 60px rgba(0, 0, 0, 0.62);
 
-      --radius: 20px;
+      /* 황흑 경고 줄무늬 — 실물 판넬과 같은 언어 */
+      --hazard: repeating-linear-gradient(45deg,
+                  #f5c518 0 9px, #16181d 9px 18px);
+
+      --radius: 12px;
       --sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont,
               'Apple SD Gothic Neo', system-ui, sans-serif;
       --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
@@ -40,7 +47,7 @@
     /* 모든 글자 크기는 rem이라, 루트만 키우면 UI 전체가 함께 커진다.
        학생은 태블릿을 책상에 놓고 팔 길이에서 보므로 폰보다 크게 잡는다. */
     html {
-      background: #dfe9fb;   /* 스크롤 바운스 시 노출되는 캔버스 색 */
+      background: #0b0d12;
       font-size: 16px;
     }
     @media (min-width: 700px)  { html { font-size: 19px; } }
@@ -49,60 +56,78 @@
       margin: 0; padding: 0;
       font-family: var(--sans);
       color: var(--text);
-      background: transparent;   /* 불투명하면 아래 .bg 레이어를 덮어버린다 */
+      background: transparent;
       overscroll-behavior: none;
       -webkit-font-smoothing: antialiased;
-
-      /* 태블릿 키오스크용: 드래그 선택·길게 눌러 뜨는 메뉴 차단 */
       -webkit-user-select: none; user-select: none;
       -webkit-touch-callout: none;
     }
-    /* 입력 필드는 예외 — 값을 고쳐야 하므로 선택이 가능해야 한다 */
     input, textarea { -webkit-user-select: text; user-select: text; }
     img, svg { -webkit-user-drag: none; user-drag: none; }
 
-    /* ---------- 배경: 부드러운 파스텔 그라데이션 ---------- */
-    .bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: linear-gradient(165deg, #dfe9fb 0%, #d9e4f7 40%, #e4e2f6 72%, #f0e6f3 100%); }
-    .blob { position: absolute; border-radius: 50%; filter: blur(64px); opacity: 0.78; will-change: transform; }
-    .blob-a { width: 62vmax; height: 62vmax; top: -22vmax; left: -14vmax; background: radial-gradient(circle, #38bdf8, transparent 68%); animation: drift-a 34s ease-in-out infinite; }
-    .blob-b { width: 54vmax; height: 54vmax; top: -12vmax; right: -18vmax; background: radial-gradient(circle, #a78bfa, transparent 68%); animation: drift-b 42s ease-in-out infinite; }
-    .blob-c { width: 58vmax; height: 58vmax; bottom: -26vmax; left: 10vmax; background: radial-gradient(circle, #f9a8d4, transparent 68%); animation: drift-c 38s ease-in-out infinite; }
-    .blob-d { width: 44vmax; height: 44vmax; bottom: -16vmax; right: -10vmax; background: radial-gradient(circle, #5eead4, transparent 68%); opacity: 0.6; animation: drift-a 46s ease-in-out infinite reverse; }
-
-    @keyframes drift-a { 0%,100% { transform: none; } 50% { transform: translate3d(4%, 5%, 0) scale(1.08); } }
-    @keyframes drift-b { 0%,100% { transform: none; } 50% { transform: translate3d(-5%, 6%, 0) scale(1.10); } }
-    @keyframes drift-c { 0%,100% { transform: none; } 50% { transform: translate3d(5%, -4%, 0) scale(1.06); } }
+    /* ---------- 배경: 금속 플레이트 + 미세 격자 ---------- */
+    .bg {
+      position: fixed; inset: 0; z-index: 0; overflow: hidden;
+      background:
+        radial-gradient(120% 80% at 50% -10%, #1c2331 0%, transparent 60%),
+        linear-gradient(180deg, #0e1118 0%, #0b0d12 100%);
+    }
+    .bg::after {
+      content: ''; position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(120, 150, 190, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(120, 150, 190, 0.05) 1px, transparent 1px);
+      background-size: 46px 46px;
+      mask-image: radial-gradient(80% 60% at 50% 20%, #000 0%, transparent 85%);
+      -webkit-mask-image: radial-gradient(80% 60% at 50% 20%, #000 0%, transparent 85%);
+    }
+    /* 상·하단 경고 띠 */
+    .bg::before {
+      content: ''; position: absolute; left: 0; right: 0; top: 0; height: 5px;
+      background: var(--hazard); opacity: 0.85;
+    }
 
     #root { min-height: 100vh; position: relative; z-index: 1; }
 
-    /* ---------- 유리 표면 ---------- */
+    /* ---------- 패널 ---------- */
     .glass {
-      background: linear-gradient(150deg, var(--glass-hi), var(--glass-lo));
-      border: 1px solid var(--edge);
+      position: relative;
+      background: linear-gradient(160deg, var(--panel-hi), var(--panel));
+      border: 1px solid var(--line);
       border-radius: var(--radius);
-      -webkit-backdrop-filter: blur(26px) saturate(180%);
-      backdrop-filter: blur(26px) saturate(180%);
-      box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
+    /* 패널 모서리 리벳 */
+    .glass::before, .glass::after {
+      content: ''; position: absolute; top: 7px; width: 4px; height: 4px;
+      border-radius: 50%; background: rgba(190, 210, 240, 0.22);
+      box-shadow: inset 0 1px 1px rgba(0,0,0,0.6);
+    }
+    .glass::before { left: 7px; }
+    .glass::after  { right: 7px; }
+
     .glass-strong {
-      background: linear-gradient(150deg, rgba(255,255,255,0.80), rgba(255,255,255,0.56));
-      border: 1px solid rgba(255, 255, 255, 0.92);
-      border-radius: 24px;
-      -webkit-backdrop-filter: blur(34px) saturate(190%);
-      backdrop-filter: blur(34px) saturate(190%);
-      box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 1);
+      background: linear-gradient(165deg, #222834, #14181f);
+      border: 1px solid var(--line-hi);
+      border-radius: 14px;
+      box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.07);
     }
-    /* backdrop-filter 미지원 시 불투명도를 올려 가독성 확보 */
-    @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-      .glass        { background: rgba(255, 255, 255, 0.86); }
-      .glass-strong { background: rgba(255, 255, 255, 0.96); }
+
+    /* 지도는 밝은 도면 그대로 — 관제 모니터처럼 베젤을 두른다 */
+    .screen {
+      background: #e9eef7;
+      border: 1px solid rgba(0,0,0,0.5);
+      border-radius: 9px;
+      box-shadow: inset 0 0 0 3px #0d1017, inset 0 3px 14px rgba(0,0,0,0.35);
+      padding: 9px;
     }
+    .hazard-rule { height: 5px; border-radius: 3px; background: var(--hazard); opacity: 0.9; }
 
     /* ---------- 타이포 ---------- */
     h1, h2, h3 { margin: 0; letter-spacing: -0.015em; }
     .eyebrow {
-      font-family: var(--mono); font-size: 0.6562rem; letter-spacing: 0.2em;
-      text-transform: uppercase; color: var(--accent); font-weight: 600;
+      font-family: var(--mono); font-size: 0.6562rem; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--accent); font-weight: 700;
     }
     .dim   { color: var(--text-dim); }
     .faint { color: var(--text-faint); }
@@ -124,59 +149,47 @@
     button:disabled { cursor: default; }
 
     .btn-glass {
-      background: linear-gradient(150deg, rgba(255,255,255,0.72), rgba(255,255,255,0.42));
-      border: 1px solid var(--edge);
-      border-radius: 14px;
-      -webkit-backdrop-filter: blur(16px) saturate(170%); backdrop-filter: blur(16px) saturate(170%);
-      box-shadow: 0 4px 14px rgba(49, 73, 122, 0.10), inset 0 1px 0 rgba(255,255,255,0.9);
-      padding: 0.625rem 0.9375rem; font-size: 0.8125rem; font-weight: 600; color: var(--text-dim);
+      background: linear-gradient(165deg, #262d3a, #191e27);
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+      padding: 0.625rem 0.9375rem; font-size: 0.8125rem; font-weight: 700; color: var(--text-dim);
     }
-    .btn-glass:hover:not(:disabled) { background: rgba(255,255,255,0.82); color: var(--text); }
+    .btn-glass:hover:not(:disabled) { border-color: var(--line-hi); color: var(--text); }
 
     .btn-primary {
-      border: 1px solid rgba(255, 255, 255, 0.7);
-      border-radius: 15px;
-      background: linear-gradient(135deg, #38bdf8, #6366f1);
-      box-shadow: 0 10px 26px rgba(79, 110, 220, 0.34), inset 0 1px 0 rgba(255,255,255,0.42);
-      color: #fff; font-weight: 700;
+      border: 1px solid rgba(250, 204, 21, 0.55);
+      border-radius: 10px;
+      background: linear-gradient(165deg, #3a3320, #24201a);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+      color: var(--accent); font-weight: 800; letter-spacing: 0.02em;
     }
-    .btn-primary:hover:not(:disabled) { box-shadow: 0 14px 32px rgba(79, 110, 220, 0.44), inset 0 1px 0 rgba(255,255,255,0.42); }
-    .btn-primary:disabled { opacity: 0.6; box-shadow: none; }
+    .btn-primary:hover:not(:disabled) { background: linear-gradient(165deg, #483f26, #2b261d); }
+    .btn-primary:disabled { opacity: 0.5; box-shadow: none; }
 
     /* 팀 타일 */
     .team-tile {
-      padding: 1.5rem 0.75rem; border-radius: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.8);
-      background: linear-gradient(155deg, var(--team), var(--team-deep));
-      box-shadow: 0 10px 24px var(--team-glow), inset 0 1px 0 rgba(255, 255, 255, 0.55);
-      font-size: 1.4375rem; font-weight: 800; color: #fff;
+      padding: 1.5rem 0.75rem; border-radius: 10px;
+      border: 1px solid var(--line-hi);
+      background: linear-gradient(165deg, #232a36, #151920);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+      font-size: 1.4375rem; font-weight: 800; color: var(--team);
       font-family: var(--mono);
-      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.22);
+      text-shadow: 0 0 14px var(--team-glow);
     }
     .team-tile::after {
-      content: ''; position: absolute; left: 0; right: 0; top: 0; height: 46%;
-      background: linear-gradient(to bottom, rgba(255,255,255,0.42), transparent);
-      pointer-events: none;
+      content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+      background: var(--team); opacity: 0.85;
     }
-    .team-tile:hover { transform: translateY(-3px); box-shadow: 0 16px 32px var(--team-glow), inset 0 1px 0 rgba(255,255,255,0.55); }
-    .team-tile:active { transform: scale(0.95); }
+    .team-tile:hover { transform: translateY(-2px); border-color: var(--team); }
 
-    /* 칩 */
     .chip {
-      padding: 0.44rem 0.875rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
-      border: 1px solid var(--edge-soft);
-      background: rgba(255, 255, 255, 0.48);
-      -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-      color: var(--text-dim);
+      padding: 0.44rem 0.875rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700;
+      border: 1px solid var(--line); background: #1b212b; color: var(--text-dim);
+      font-family: var(--mono);
     }
-    .chip:hover { background: rgba(255, 255, 255, 0.75); }
-    .chip-on {
-      color: #fff; border-color: transparent;
-      background: linear-gradient(135deg, #38bdf8, #6366f1);
-      box-shadow: 0 5px 15px rgba(79, 110, 220, 0.32);
-    }
+    .chip-on { border-color: var(--accent); color: #0d1017; background: var(--accent); }
 
-    /* 아이콘 + 텍스트 한 줄 정렬 */
     .ico-row { display: flex; align-items: center; gap: 8px; }
     .legend-dot {
       width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; color: #fff;
@@ -190,33 +203,32 @@
     .move-bar {
       position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
       z-index: 260; display: flex; align-items: center; gap: 9px;
-      pointer-events: none;          /* 바에 가린 지도 자리도 탭할 수 있게 */
-      padding: 10px 12px 10px 15px; border-radius: 17px;
-      font-size: 0.75rem; font-weight: 600; color: var(--text);
-      background: rgba(255,255,255,0.86);
-      -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.9);
-      box-shadow: 0 12px 34px rgba(38,60,105,0.28);
+      pointer-events: none;
+      padding: 10px 12px 10px 15px; border-radius: 10px;
+      font-size: 0.75rem; font-weight: 700; color: var(--text);
+      background: linear-gradient(165deg, #242b38, #14181f);
+      border: 1px solid var(--accent);
+      box-shadow: 0 12px 34px rgba(0,0,0,0.6);
     }
-    .move-bar button { pointer-events: auto; padding: 7px 12px; border-radius: 11px; font-size: 0.6875rem; font-weight: 700; border: 1px solid var(--edge-soft); background: rgba(255,255,255,0.7); }
-    .move-bar button.danger { color: var(--danger); border-color: rgba(220,38,38,0.3); }
+    .move-bar button { pointer-events: auto; padding: 7px 12px; border-radius: 7px; font-size: 0.6875rem; font-weight: 700; border: 1px solid var(--line); background: #1b212b; color: var(--text-dim); }
+    .move-bar button.danger { color: var(--danger); border-color: rgba(244,63,94,0.4); }
 
     /* 소품 팔레트 · 드래그 */
     .tray { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
     .tray-chip {
-      touch-action: none;            /* 드래그 중 페이지가 같이 스크롤되지 않게 */
+      touch-action: none;
       -webkit-user-select: none; user-select: none;
-      width: 5.1rem; padding: 8px 4px 7px; border-radius: 15px;
+      width: 5.1rem; padding: 8px 4px 7px; border-radius: 9px;
       display: flex; flex-direction: column; align-items: center; gap: 4px;
-      border: 1px solid var(--edge-soft);
-      background: rgba(255, 255, 255, 0.52);
-      -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+      border: 1px solid var(--line);
+      background: linear-gradient(165deg, #222936, #161b23);
       font-size: 0.625rem; font-weight: 700; color: var(--text-dim);
       cursor: grab; text-align: center; line-height: 1.25;
-      transition: transform .16s var(--ease), opacity .2s;
+      transition: transform .16s var(--ease), opacity .2s, border-color .2s;
     }
     .tray-chip:active { cursor: grabbing; transform: scale(0.94); }
-    .tray-chip.done { opacity: 0.36; cursor: default; }
+    .tray-chip:hover:not(.done) { border-color: var(--line-hi); }
+    .tray-chip.done { opacity: 0.32; cursor: default; }
     .tray-mark {
       width: 2.15rem; height: 2.15rem; display: flex; align-items: center; justify-content: center;
       color: #fff; box-shadow: 0 4px 12px rgba(49,73,122,0.22);
@@ -238,135 +250,94 @@
     .board-card { padding: 11px 11px 9px; }
     .board-head { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
     .board-dot {
-      width: 1.35rem; height: 1.35rem; border-radius: 50%; flex: none;
+      width: 1.35rem; height: 1.35rem; border-radius: 5px; flex: none;
       display: flex; align-items: center; justify-content: center;
       font-family: var(--mono); font-size: 0.6875rem; font-weight: 800; color: #fff;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
     }
     .board-name { font-size: 0.7812rem; font-weight: 700; flex: 1; }
     .board-count { font-family: var(--mono); font-size: 0.7188rem; color: var(--text-dim); font-weight: 600; }
-    .board-bar { background: rgba(43,58,85,0.12); height: 4px; border-radius: 2px; overflow: hidden; margin-bottom: 8px; }
-    .board-bar > div { height: 100%; border-radius: 2px; transition: width .3s var(--ease); }
+    .board-bar { background: #0c0f15; height: 4px; border-radius: 2px; overflow: hidden; margin-bottom: 8px; border: 1px solid var(--line); }
+    .board-bar > div { height: 100%; transition: width .3s var(--ease); }
     .board-found { display: flex; gap: 9px; margin-top: 7px; font-size: 0.6875rem; color: var(--text-dim); font-weight: 600; }
     .board-found span { display: flex; align-items: center; gap: 3px; }
     .board-empty { font-size: 0.6875rem; color: var(--text-faint); margin-top: 7px; text-align: center; }
 
     .seg {
-      flex: 1; padding: 0.8125rem 0.625rem; border-radius: 15px; font-size: 0.8125rem; font-weight: 600;
+      flex: 1; padding: 0.8125rem 0.625rem; border-radius: 9px; font-size: 0.8125rem; font-weight: 700;
       display: flex; align-items: center; justify-content: center; gap: 7px;
-      border: 1px solid var(--edge-soft);
-      background: rgba(255, 255, 255, 0.46);
-      -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+      border: 1px solid var(--line);
+      background: linear-gradient(165deg, #222936, #161b23);
       color: var(--text-dim);
     }
-    .seg:hover { background: rgba(255, 255, 255, 0.72); }
     .seg-on {
-      color: #fff; border-color: transparent;
-      background: linear-gradient(135deg, #38bdf8, #6366f1);
-      box-shadow: 0 8px 22px rgba(79, 110, 220, 0.34), inset 0 1px 0 rgba(255,255,255,0.4);
+      border-color: var(--accent); color: var(--accent);
+      background: linear-gradient(165deg, #33301f, #201d17);
+      box-shadow: inset 0 0 0 1px rgba(250,204,21,0.18);
     }
 
-    /* ---------- 입력 ---------- */
     .field { margin-bottom: 14px; }
     .field label {
       display: block; margin-bottom: 6px; font-size: 0.75rem; font-weight: 700;
-      letter-spacing: 0.01em; color: var(--text-dim);
+      color: var(--text-dim); letter-spacing: 0.03em;
     }
-    .field input[type="number"] {
+    .field input {
       width: 100%; padding: 0.8125rem 0.9375rem;
+      border-radius: 8px; border: 1px solid var(--line);
+      background: #0c0f15; color: var(--accent);
+      font-family: var(--mono); font-weight: 800; letter-spacing: 0.04em;
       font-size: 1rem !important;   /* iOS 자동 확대 방지 */
-      font-family: var(--mono); font-weight: 600;
-      color: var(--text);
-      background: rgba(255, 255, 255, 0.62);
-      border: 1px solid var(--edge-soft);
-      border-radius: 14px;
-      outline: none;
-      transition: border-color .2s, box-shadow .2s, background .2s;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.6);
+      text-align: right;
     }
-    .field input::placeholder { color: #9aa8bd; font-weight: 400; }
-    .field input:focus {
-      border-color: #60a5fa;
-      background: rgba(255, 255, 255, 0.92);
-      box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.20);
-    }
+    .field input::placeholder { color: #46536b; font-weight: 600; letter-spacing: 0; }
+    .field input:focus { outline: none; border-color: var(--accent); box-shadow: inset 0 2px 8px rgba(0,0,0,0.6), 0 0 0 3px rgba(250,204,21,0.12); }
 
     .check {
-      display: flex; align-items: center; gap: 12px;
-      padding: 0.8125rem 0.9375rem; border-radius: 15px; cursor: pointer;
-      border: 1px solid var(--edge-soft);
-      background: rgba(255, 255, 255, 0.46);
-      font-size: 0.9375rem; font-weight: 500;
-      transition: background .2s, border-color .2s, box-shadow .2s, transform .16s var(--ease);
+      display: flex; align-items: center; gap: 11px;
+      padding: 0.8125rem 0.9375rem; border-radius: 9px; cursor: pointer;
+      border: 1px solid var(--line); background: #161b23;
+      font-size: 0.9375rem; font-weight: 600; color: var(--text-dim);
+      margin-bottom: 9px;
     }
-    .check:active { transform: scale(0.98); }
-    .check input { width: 1.25rem; height: 1.25rem; accent-color: #4f46e5; margin: 0; flex-shrink: 0; }
-    .check-on {
-      border-color: rgba(99, 102, 241, 0.5);
-      background: rgba(224, 231, 255, 0.78);
-      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.18);
-    }
+    .check input { width: 1.25rem; height: 1.25rem; accent-color: var(--accent); flex: none; }
+    .check-on { border-color: var(--accent); color: var(--text); background: #23200f; }
 
-    /* ---------- 진행 바 ---------- */
     .progress {
-      background: rgba(255, 255, 255, 0.55);
-      border: 1px solid var(--edge-soft);
-      border-radius: 999px; overflow: hidden;
+      background: #0c0f15; border-radius: 3px; overflow: hidden;
+      border: 1px solid var(--line);
     }
-    .progress-fill {
-      height: 100%; border-radius: 999px; position: relative; overflow: hidden;
-      transition: width .6s var(--ease);
-    }
-    /* 광택은 진행률이 있을 때만 — 0%에서 도는 애니메이션은 낭비다 */
-    .progress-fill.on::after {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,0.75) 50%, transparent 80%);
-      animation: sheen 2.6s ease-in-out infinite;
-    }
-    @keyframes sheen { 0% { transform: translateX(-120%); } 60%, 100% { transform: translateX(220%); } }
+    .progress-fill { height: 100%; transition: width .35s var(--ease); }
+    .progress-fill.on { box-shadow: 0 0 10px var(--team-glow, rgba(250,204,21,0.5)); }
 
-    /* ---------- 로딩 ---------- */
-    .loading { padding: 96px 20px; text-align: center; color: var(--text-dim); font-size: 0.875rem; }
+    .loading { padding: 96px 20px; text-align: center; color: var(--text-dim); font-size: 0.875rem; font-family: var(--mono); }
     .loading-spinner {
-      display: inline-block; width: 44px; height: 44px; margin-bottom: 16px;
-      border: 3px solid rgba(99, 102, 241, 0.18);
-      border-top-color: #6366f1;
-      border-radius: 50%;
-      animation: spin 0.85s linear infinite;
+      display: inline-block; width: 34px; height: 34px; margin-bottom: 14px;
+      border: 3px solid rgba(148,170,200,0.18); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.9s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ---------- 연결 표시 ---------- */
     .build-tag {
       position: fixed; right: 8px; bottom: 5px; z-index: 300;
       font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em;
-      color: var(--text-faint); opacity: 0.55; pointer-events: none;
+      color: var(--text-faint); opacity: 0.5; pointer-events: none;
     }
     .conn-indicator {
-      position: fixed; top: 10px; right: 10px; z-index: 200;
+      position: fixed; top: 10px; right: 10px; z-index: 300;
       display: flex; align-items: center; gap: 6px;
-      padding: 7px 13px; border-radius: 999px;
-      font-size: 0.6875rem; font-weight: 700;
-      border: 1px solid var(--edge);
-      -webkit-backdrop-filter: blur(18px) saturate(180%); backdrop-filter: blur(18px) saturate(180%);
-      box-shadow: 0 5px 18px rgba(49, 73, 122, 0.14);
-      animation: rise .4s var(--ease) both;
+      padding: 6px 11px; border-radius: 6px;
+      font-family: var(--mono); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.05em;
     }
-    .conn-err { background: rgba(254, 226, 226, 0.86); color: #b91c1c; }
+    .conn-err { background: #2a1116; color: #fb7185; border: 1px solid rgba(244,63,94,0.45); }
     .conn-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulse 1.4s ease-in-out infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.8); } }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
 
-    /* ---------- 등장 애니메이션 ---------- */
-    @keyframes rise  { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-    @keyframes pop   { from { opacity: 0; transform: scale(0.86); }     to { opacity: 1; transform: none; } }
-    @keyframes zoomIn{ from { opacity: 0; transform: scale(0.94) translateY(12px); } to { opacity: 1; transform: none; } }
-    @keyframes fadeIn{ from { opacity: 0; } to { opacity: 1; } }
+    /* 관제 상태 표시줄 */
+    .status-row { display: flex; align-items: center; gap: 9px; font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.08em; color: var(--text-faint); }
+    .status-bars { display: flex; gap: 2px; align-items: flex-end; height: 12px; }
+    .status-bars i { width: 3px; background: var(--ok); border-radius: 1px; display: block; }
 
-    .rise   { animation: rise .5s var(--ease) both; }
-    .pop    { animation: pop .42s var(--ease) both; }
-    .zoom   { animation: zoomIn .38s var(--ease) both; }
-    .fade   { animation: fadeIn .28s ease both; }
-
-    /* SVG 핀 등장 (stagger) */
     .pin { animation: pop .44s var(--ease) both; transition: transform .18s var(--ease); transform-box: fill-box; transform-origin: center; }
     .pin:active { transform: scale(0.9); }
     /* 정복한 구역: 또렷하게 빛난다 */
@@ -380,7 +351,7 @@
     .pin-fog text {
       opacity: 1;
       paint-order: stroke;
-      stroke: rgba(255,255,255,0.95);
+      stroke: rgba(255,255,255,0.95);   /* 지도는 밝은 도면이라 흰 후광 유지 */
       stroke-width: 3.5px;
       stroke-linejoin: round;
     }
@@ -545,7 +516,7 @@
 
     // 세미나실 = 조종본부이자 미션 1의 출발·도착 지점. δ2 바로 서쪽 방에 있다.
     // 안개와 무관하게 항상 선명 — 시작 기준점이라 처음부터 보여야 한다.
-    const BASE = { x: 170, y: 520, label: '조종본부' };
+    const BASE = { x: 205, y: 520, label: '조종본부' };
 
     const HomeBase = ({ compact = false }) => {
       const r = compact ? 40 : 30;
@@ -556,28 +527,26 @@
           <MapIcon name="home" cx={BASE.x} cy={BASE.y - r * 0.08} size={r * 1.15} color="#fff" />
           {!compact && (
             <React.Fragment>
-              {/* 동쪽으로 활짝 열린 대문 — 두 짝이 바깥으로 젖혀져 있다 */}
+              {/* 동쪽으로 활짝 열린 대문 — BASE 기준 상대 좌표라 베이스를 옮기면 함께 간다 */}
               <g>
-                {/* 열린 궤적 */}
-                <path d="M232 470 A34 34 0 0 0 206 490" fill="none" stroke="#4338ca"
-                      strokeWidth="2" strokeDasharray="5 5" opacity="0.45" />
-                <path d="M232 554 A34 34 0 0 1 206 534" fill="none" stroke="#4338ca"
-                      strokeWidth="2" strokeDasharray="5 5" opacity="0.45" />
-                {/* 문설주 */}
-                <rect x="199" y="466" width="13" height="26" rx="6" fill="#312e81" />
-                <rect x="199" y="532" width="13" height="26" rx="6" fill="#312e81" />
-                {/* 문짝 — 살대까지 넣어 대문처럼 */}
-                <g transform="rotate(-40 206 490)">
-                  <rect x="204" y="483" width="34" height="14" rx="5" fill="#4f46e5" stroke="#fff" strokeWidth="2.5" />
-                  <path d="M213 485.5v9M222 485.5v9M231 485.5v9" stroke="#c7d2fe" strokeWidth="2" strokeLinecap="round" />
+                <path d={`M${BASE.x+62} ${BASE.y-50} A34 34 0 0 0 ${BASE.x+36} ${BASE.y-30}`}
+                      fill="none" stroke="#4338ca" strokeWidth="2" strokeDasharray="5 5" opacity="0.45" />
+                <path d={`M${BASE.x+62} ${BASE.y+34} A34 34 0 0 1 ${BASE.x+36} ${BASE.y+14}`}
+                      fill="none" stroke="#4338ca" strokeWidth="2" strokeDasharray="5 5" opacity="0.45" />
+                <rect x={BASE.x+29} y={BASE.y-54} width="13" height="26" rx="6" fill="#312e81" />
+                <rect x={BASE.x+29} y={BASE.y+12} width="13" height="26" rx="6" fill="#312e81" />
+                <g transform={`rotate(-40 ${BASE.x+36} ${BASE.y-30})`}>
+                  <rect x={BASE.x+34} y={BASE.y-37} width="34" height="14" rx="5" fill="#4f46e5" stroke="#fff" strokeWidth="2.5" />
+                  <path d={`M${BASE.x+43} ${BASE.y-34.5}v9M${BASE.x+52} ${BASE.y-34.5}v9M${BASE.x+61} ${BASE.y-34.5}v9`}
+                        stroke="#c7d2fe" strokeWidth="2" strokeLinecap="round" fill="none" />
                 </g>
-                <g transform="rotate(40 206 534)">
-                  <rect x="204" y="527" width="34" height="14" rx="5" fill="#4f46e5" stroke="#fff" strokeWidth="2.5" />
-                  <path d="M213 529.5v9M222 529.5v9M231 529.5v9" stroke="#c7d2fe" strokeWidth="2" strokeLinecap="round" />
+                <g transform={`rotate(40 ${BASE.x+36} ${BASE.y+14})`}>
+                  <rect x={BASE.x+34} y={BASE.y+7} width="34" height="14" rx="5" fill="#4f46e5" stroke="#fff" strokeWidth="2.5" />
+                  <path d={`M${BASE.x+43} ${BASE.y+9.5}v9M${BASE.x+52} ${BASE.y+9.5}v9M${BASE.x+61} ${BASE.y+9.5}v9`}
+                        stroke="#c7d2fe" strokeWidth="2" strokeLinecap="round" fill="none" />
                 </g>
-                {/* 경첩 */}
-                <circle cx="206" cy="490" r="4" fill="#fff" stroke="#312e81" strokeWidth="2.5" />
-                <circle cx="206" cy="534" r="4" fill="#fff" stroke="#312e81" strokeWidth="2.5" />
+                <circle cx={BASE.x+36} cy={BASE.y-30} r="4" fill="#fff" stroke="#312e81" strokeWidth="2.5" />
+                <circle cx={BASE.x+36} cy={BASE.y+14} r="4" fill="#fff" stroke="#312e81" strokeWidth="2.5" />
               </g>
               <rect x={BASE.x - 62} y={BASE.y + r + 20} width="124" height="27" rx="13"
                     fill="#4338ca" stroke="#fff" strokeWidth="2.5" />
@@ -1130,7 +1099,7 @@
 
           <div className="glass rise" style={{ padding: '14px', marginTop: '14px', animationDelay: '.08s' }}>
             <p className="faint" style={{ margin: '0 0 10px', fontSize: '0.7812rem', textAlign: 'center', fontWeight: 500 }}>구역 핀을 탭하여 데이터 입력</p>
-            <div ref={mapRef} style={{ position: 'relative' }}>
+            <div ref={mapRef} className="screen" style={{ position: 'relative' }}>
               <FloorMap zoneData={data} onZoneClick={setSelectedZone} teamId={teamId} selectedZone={selectedZone}
                         markers={markers}
                         movingProp={moving}
@@ -1360,7 +1329,7 @@
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b24 · gate';
+    const APP_BUILD = 'b25 · plant';
     const UPDATE_CHECK_MS = 60000;
 
     function App() {
