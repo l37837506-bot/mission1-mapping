@@ -479,6 +479,14 @@
       ),
       check: <path d="M5 12.5 10 17.4 19 7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />,
 
+      // 조종본부 = 출발·도착 지점
+      home: (
+        <g {...STROKE}>
+          <path d="M3.6 10.8 12 4.2l8.4 6.6" />
+          <path d="M5.7 12.4V20h12.6v-7.6" />
+          <path d="M9.2 20v-4.4h5.6V20" />
+        </g>
+      ),
       // 장애물: 육각기둥 + 유해물질 경고 표식
       obstacle: (
         <g {...STROKE}>
@@ -534,6 +542,34 @@
       control:  { fill: '#7c3aed', ink: '#fff' },
     };
     const propById = (id) => PROPS.find(p => p.id === id);
+
+    // 세미나실 = 조종본부이자 미션 1의 출발·도착 지점. δ2 바로 서쪽 방에 있다.
+    // 안개와 무관하게 항상 선명 — 시작 기준점이라 처음부터 보여야 한다.
+    const BASE = { x: 170, y: 520, label: '세미나실 · 조종본부' };
+
+    const HomeBase = ({ compact = false }) => {
+      const r = compact ? 40 : 30;
+      return (
+        <g style={{ pointerEvents: 'none' }}>
+          <ellipse cx={BASE.x + 1} cy={BASE.y + r * 0.82} rx={r * 0.95} ry={r * 0.3} fill="rgba(23,35,59,0.3)" />
+          <circle cx={BASE.x} cy={BASE.y} r={r} fill="#4338ca" stroke="#fff" strokeWidth="4" />
+          <MapIcon name="home" cx={BASE.x} cy={BASE.y - r * 0.08} size={r * 1.15} color="#fff" />
+          {!compact && (
+            <React.Fragment>
+              <rect x={BASE.x - 62} y={BASE.y + r + 8} width="124" height="27" rx="13"
+                    fill="#4338ca" stroke="#fff" strokeWidth="2.5" />
+              <text x={BASE.x} y={BASE.y + r + 26} textAnchor="middle" fontSize="15"
+                    fontWeight="800" fill="#fff" letterSpacing="0.5">출발 · 도착</text>
+              <text x={BASE.x} y={BASE.y + r + 52} textAnchor="middle" fontSize="13.5"
+                    fontWeight="700" fill="#312e81"
+                    style={{ paintOrder: 'stroke', stroke: 'rgba(255,255,255,0.95)', strokeWidth: '3.5px', strokeLinejoin: 'round' }}>
+                {BASE.label}
+              </text>
+            </React.Fragment>
+          )}
+        </g>
+      );
+    };
 
     // 뾰족한 위쪽 정육각형
     const hexPoints = (cx, cy, r) => {
@@ -821,6 +857,7 @@
               );
             })}
           </g>
+          <HomeBase compact={compact} />
           {ZONES.map((zone, i) => {
             const isSelected = selectedZone === zone.code;
             const visited = isVisited(zone.code);
@@ -1300,7 +1337,7 @@
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b21 · smaller props';
+    const APP_BUILD = 'b22 · home base';
     const UPDATE_CHECK_MS = 60000;
 
     function App() {
