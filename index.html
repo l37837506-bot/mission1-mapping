@@ -545,7 +545,7 @@
 
     // 세미나실 = 조종본부이자 미션 1의 출발·도착 지점. δ2 바로 서쪽 방에 있다.
     // 안개와 무관하게 항상 선명 — 시작 기준점이라 처음부터 보여야 한다.
-    const BASE = { x: 170, y: 520, label: '세미나실 · 조종본부' };
+    const BASE = { x: 170, y: 520, label: '조종본부' };
 
     const HomeBase = ({ compact = false }) => {
       const r = compact ? 40 : 30;
@@ -556,24 +556,34 @@
           <MapIcon name="home" cx={BASE.x} cy={BASE.y - r * 0.08} size={r * 1.15} color="#fff" />
           {!compact && (
             <React.Fragment>
-              {/* 출입문 — 동쪽으로 열려 δ 복도로 나간다 */}
-              <g strokeLinecap="round" fill="none">
-                {/* 문틀 (위·아래 벽) */}
-                <path d="M206 482 V500 M206 540 V558" stroke="#312e81" strokeWidth="5.5" />
-                {/* 열린 문짝 */}
-                <path d="M206 500 L233 485" stroke="#4338ca" strokeWidth="5.5" />
-                {/* 열리는 궤적 */}
-                <path d="M233 485 A31 31 0 0 1 206 531" stroke="#4338ca" strokeWidth="2"
-                      strokeDasharray="5 5" opacity="0.55" />
-                {/* 진행 방향 */}
-                <path d="M215 523 H258" stroke="#4338ca" strokeWidth="5.5" />
-                <path d="M254 514 L270 523 L254 532 Z" fill="#4338ca" stroke="none" />
+              {/* 동쪽으로 활짝 열린 대문 — 두 짝이 바깥으로 젖혀져 있다 */}
+              <g>
+                {/* 열린 궤적 */}
+                <path d="M232 470 A34 34 0 0 0 206 490" fill="none" stroke="#4338ca"
+                      strokeWidth="2" strokeDasharray="5 5" opacity="0.45" />
+                <path d="M232 554 A34 34 0 0 1 206 534" fill="none" stroke="#4338ca"
+                      strokeWidth="2" strokeDasharray="5 5" opacity="0.45" />
+                {/* 문설주 */}
+                <rect x="199" y="466" width="13" height="26" rx="6" fill="#312e81" />
+                <rect x="199" y="532" width="13" height="26" rx="6" fill="#312e81" />
+                {/* 문짝 — 살대까지 넣어 대문처럼 */}
+                <g transform="rotate(-40 206 490)">
+                  <rect x="204" y="483" width="34" height="14" rx="5" fill="#4f46e5" stroke="#fff" strokeWidth="2.5" />
+                  <path d="M213 485.5v9M222 485.5v9M231 485.5v9" stroke="#c7d2fe" strokeWidth="2" strokeLinecap="round" />
+                </g>
+                <g transform="rotate(40 206 534)">
+                  <rect x="204" y="527" width="34" height="14" rx="5" fill="#4f46e5" stroke="#fff" strokeWidth="2.5" />
+                  <path d="M213 529.5v9M222 529.5v9M231 529.5v9" stroke="#c7d2fe" strokeWidth="2" strokeLinecap="round" />
+                </g>
+                {/* 경첩 */}
+                <circle cx="206" cy="490" r="4" fill="#fff" stroke="#312e81" strokeWidth="2.5" />
+                <circle cx="206" cy="534" r="4" fill="#fff" stroke="#312e81" strokeWidth="2.5" />
               </g>
-              <rect x={BASE.x - 62} y={BASE.y + r + 8} width="124" height="27" rx="13"
+              <rect x={BASE.x - 62} y={BASE.y + r + 20} width="124" height="27" rx="13"
                     fill="#4338ca" stroke="#fff" strokeWidth="2.5" />
-              <text x={BASE.x} y={BASE.y + r + 26} textAnchor="middle" fontSize="15"
+              <text x={BASE.x} y={BASE.y + r + 38} textAnchor="middle" fontSize="15"
                     fontWeight="800" fill="#fff" letterSpacing="0.5">출발 · 도착</text>
-              <text x={BASE.x} y={BASE.y + r + 52} textAnchor="middle" fontSize="13.5"
+              <text x={BASE.x} y={BASE.y + r + 64} textAnchor="middle" fontSize="13.5"
                     fontWeight="700" fill="#312e81"
                     style={{ paintOrder: 'stroke', stroke: 'rgba(255,255,255,0.95)', strokeWidth: '3.5px', strokeLinejoin: 'round' }}>
                 {BASE.label}
@@ -1350,7 +1360,7 @@
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b23 · exit door';
+    const APP_BUILD = 'b24 · gate';
     const UPDATE_CHECK_MS = 60000;
 
     function App() {
