@@ -228,7 +228,8 @@
     }
     .tray-chip:active { cursor: grabbing; transform: scale(0.94); }
     .tray-chip:hover:not(.done) { border-color: var(--line-hi); }
-    .tray-chip.done { opacity: 0.32; cursor: default; }
+    .tray-chip.done { opacity: 0.42; cursor: default; }
+    .tray-chip.done .tray-mark { opacity: 0.7; box-shadow: none; }
     .tray-mark {
       width: 2.15rem; height: 2.15rem; display: flex; align-items: center; justify-content: center;
       color: #fff; box-shadow: 0 4px 12px rgba(49,73,122,0.22);
@@ -1138,7 +1139,7 @@
                          style={{ background: st.fill, color: st.ink }}>
                       <Icon name={prop.type} size={19} />
                     </div>
-                    <span>{placed ? '배치됨' : prop.name}</span>
+                    <span>{prop.name}</span>
                   </div>
                 );
               })}
@@ -1329,7 +1330,7 @@
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b25 · plant';
+    const APP_BUILD = 'b26 · tray labels';
     const UPDATE_CHECK_MS = 60000;
 
     function App() {
