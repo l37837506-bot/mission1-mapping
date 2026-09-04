@@ -169,7 +169,7 @@
 
     /* 팀 타일 */
     .team-tile {
-      padding: 1.5rem 0.75rem; border-radius: 10px;
+      padding: 1.5rem 0.35rem; border-radius: 10px;
       border: 1px solid var(--line-hi);
       background: linear-gradient(165deg, #232a36, #151920);
       box-shadow: 0 6px 18px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
@@ -1362,7 +1362,7 @@
 
         <div className="glass rise" style={{ padding: '20px', marginBottom: '13px', animationDelay: '.08s' }}>
           <p className="faint" style={{ fontSize: '0.7188rem', fontWeight: 700, margin: '0 0 13px' }}>팀을 선택하세요</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))', gap: '11px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${TEAMS.length}, minmax(0, 1fr))`, gap: '8px' }}>
             {TEAMS.map((team, i) => (
               <button key={team.id} className="team-tile ripple pop" onClick={() => onSelectTeam(team.id)}
                       style={{ ['--team']: team.color, ['--team-deep']: team.deep, ['--team-glow']: team.color + '66', animationDelay: `${140 + i * 55}ms` }}>
@@ -1381,7 +1381,7 @@
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b29 · shield store';
+    const APP_BUILD = 'b30 · one row';
     const UPDATE_CHECK_MS = 60000;
 
     function App() {
