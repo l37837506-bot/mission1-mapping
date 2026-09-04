@@ -67,7 +67,7 @@ STEAM 로봇 교육 프로그램. UGOT 모듈러 로봇을 활용한 "원자력 
 - **γ (남측 5개)**: γ1(캡슐 위치), γ2, γ3, γ4, γ5
 - **δ (서측 3개)**: δ1, δ2, δ3 (세미나실 앞/옆)
 
-팀 이름은 그냥 **1팀~6팀** (구역과 헷갈리지 않도록 그리스 문자 안 씀).
+팀 이름은 그냥 **1팀~5팀** (구역과 헷갈리지 않도록 그리스 문자 안 씀).
 
 ---
 
@@ -90,7 +90,7 @@ STEAM 로봇 교육 프로그램. UGOT 모듈러 로봇을 활용한 "원자력 
   - 읽기: GET `/{DB_PATH}.json` (3초 폴링)
 - **라우팅**: URL 해시 기반
   - 홈: `/`
-  - 팀: `/#/team/1` ~ `/#/team/6`
+  - 팀: `/#/team/1` ~ `/#/team/5`
   - 강사: `/#/admin`
 
 ### 화면 구성
@@ -167,7 +167,7 @@ Database URL: `https://mission1-mapping-default-rtdb.firebaseio.com`
 4. 배포 URL: `https://137837506-bot.github.io/mission1-mapping/`
 
 ### 태블릿 URL 배정
-- 1~6팀: `.../mission1-mapping/#/team/{1~6}`
+- 1~5팀: `.../mission1-mapping/#/team/{1~5}`
 - 강사: `.../mission1-mapping/#/admin`
 - iOS/Android 모두 "홈 화면에 추가"로 앱처럼 사용 가능
 
