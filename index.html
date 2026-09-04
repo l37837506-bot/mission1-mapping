@@ -236,6 +236,12 @@
     }
     .tray-mark.hex { clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); border-radius: 3px; }
     .tray-mark.sq  { border-radius: 11px; }
+    /* 차폐 저장고는 바닥 구역이라 납작한 구획 모양으로 */
+    .tray-mark.pad {
+      width: 3rem; height: 1.6rem; border-radius: 5px;
+      background: rgba(250, 204, 21, 0.22) !important;
+      border: 2px dashed #facc15; box-shadow: none;
+    }
     .drag-ghost {
       position: fixed; z-index: 400; pointer-events: none;
       transform: translate(-50%, -50%); opacity: 0.92;
@@ -508,6 +514,7 @@
       { id: 'reactor', type: 'reactor',  name: '원자로 건물' },
       { id: 'coolant', type: 'coolant',  name: '냉각수 처리동' },
       { id: 'control', type: 'control',  name: '전력제어실' },
+      { id: 'shield',  type: 'shield',   name: '차폐 저장고' },
     ];
     // 장애물은 육각형 토큰, 건물은 둥근 사각 토큰 — 색뿐 아니라 모양으로도 구분해
     // 기존 교량(어두운 원)·캡슐(호박색 원) 배지와 헷갈리지 않게 한다.
@@ -516,6 +523,8 @@
       reactor:  { fill: '#0e7490', ink: '#fff' },
       coolant:  { fill: '#0284c7', ink: '#fff' },
       control:  { fill: '#7c3aed', ink: '#fff' },
+      // 차폐 저장고는 건물이 아니라 바닥에 구획선을 그은 구역이다
+      shield:   { fill: '#facc15', ink: '#422006' },
     };
     const propById = (id) => PROPS.find(p => p.id === id);
 
@@ -579,8 +588,36 @@
     };
 
     // 지도 위 소품 토큰
-    const PropToken = ({ type, x, y, r = 20, dim = false }) => {
+    const PropToken = ({ type, x, y, r = 20, dim = false, compact = false }) => {
       const st = PROP_STYLE[type] || PROP_STYLE.obstacle;
+
+      // 차폐 저장고: 바닥에 노란 구획선을 두르고 방사선 기호를 찍은 구역
+      if (type === 'shield') {
+        const w = r * 4.2, h = r * 2.8;
+        const L = r * 0.9;   // 모서리 표시 길이
+        const corner = (cx, cy, sx, sy) =>
+          `M${cx + sx * L} ${cy} H${cx} V${cy + sy * L}`;
+        return (
+          <g style={{ pointerEvents: 'none', opacity: dim ? 0.4 : 1 }}>
+            <rect x={x - w / 2} y={y - h / 2} width={w} height={h} rx={r * 0.35}
+                  fill={st.fill} fillOpacity="0.22" stroke={st.fill} strokeWidth={r * 0.16}
+                  strokeDasharray={`${r * 0.5} ${r * 0.34}`} />
+            {/* 바닥 구획 모서리 — 실제 보관구역 바닥 표시처럼 */}
+            <g stroke={st.fill} strokeWidth={r * 0.22} fill="none" strokeLinecap="round">
+              <path d={corner(x - w / 2 + 4, y - h / 2 + 4,  1,  1)} />
+              <path d={corner(x + w / 2 - 4, y - h / 2 + 4, -1,  1)} />
+              <path d={corner(x - w / 2 + 4, y + h / 2 - 4,  1, -1)} />
+              <path d={corner(x + w / 2 - 4, y + h / 2 - 4, -1, -1)} />
+            </g>
+            <MapIcon name="radiation" cx={x} cy={compact ? y : y - r * 0.24} size={r * 1.5} color={st.ink} />
+            {!compact && (
+              <text x={x} y={y + h / 2 - r * 0.34} textAnchor="middle"
+                    fontSize={r * 0.62} fontWeight="800" fill={st.ink}>차폐 저장고</text>
+            )}
+          </g>
+        );
+      }
+
       return (
         <g style={{ pointerEvents: 'none', opacity: dim ? 0.4 : 1 }}>
           <ellipse cx={x + 1} cy={y + r * 0.78} rx={r * 0.95} ry={r * 0.3} fill="rgba(23,35,59,0.3)" />
@@ -925,13 +962,17 @@
                   <circle cx={m.x} cy={m.y} r={rr + 13} fill="none"
                           stroke="#6366f1" strokeWidth="4" opacity="0.85" className="prop-picked" />
                 )}
-                <PropToken type={prop.type} x={m.x} y={m.y} r={rr} dim={!!movingProp && !picked} />
+                <PropToken type={prop.type} x={m.x} y={m.y} r={rr} dim={!!movingProp && !picked} compact={compact} />
                 {/* 토큰 그림은 pointer-events:none 이므로 잡을 면을 따로 깐다.
                     손가락으로도 편하도록 토큰보다 조금 넉넉하게 */}
-                {onMarkerTap && (
-                  <circle cx={m.x} cy={m.y} r={rr + 10} fill="#fff" fillOpacity="0.001"
+                {onMarkerTap && (prop.type === 'shield'
+                  ? <rect x={m.x - rr * 2.1} y={m.y - rr * 1.4} width={rr * 4.2} height={rr * 2.8}
+                          fill="#fff" fillOpacity="0.001"
                           style={{ pointerEvents: 'all', touchAction: 'manipulation' }}
                           onClick={(e) => { e.stopPropagation(); onMarkerTap(id); }} />
+                  : <circle cx={m.x} cy={m.y} r={rr + 10} fill="#fff" fillOpacity="0.001"
+                            style={{ pointerEvents: 'all', touchAction: 'manipulation' }}
+                            onClick={(e) => { e.stopPropagation(); onMarkerTap(id); }} />
                 )}
               </g>
             );
@@ -1132,7 +1173,7 @@
 
           <div className="glass rise" style={{ padding: '13px 12px 11px', marginTop: '14px', animationDelay: '.14s' }}>
             <p className="faint" style={{ margin: '0 0 10px', fontSize: '0.7812rem', textAlign: 'center', fontWeight: 500 }}>
-              발견한 물건을 지도로 끌어다 놓으세요
+              발견한 시설과 장애물을 지도에 배치하세요
             </p>
             <div className="tray">
               {PROPS.map(prop => {
@@ -1142,7 +1183,7 @@
                   <div key={prop.id}
                        className={placed ? 'tray-chip done' : 'tray-chip'}
                        onPointerDown={placed ? undefined : (e) => beginDrag(e, prop.id)}>
-                    <div className={'tray-mark ' + (prop.type === 'obstacle' ? 'hex' : 'sq')}
+                    <div className={'tray-mark ' + (prop.type === 'obstacle' ? 'hex' : prop.type === 'shield' ? 'pad' : 'sq')}
                          style={{ background: st.fill, color: st.ink }}>
                       <Icon name={prop.type} size={19} />
                     </div>
@@ -1152,7 +1193,7 @@
               })}
             </div>
             <p className="faint" style={{ margin: '9px 0 0', fontSize: '0.625rem', textAlign: 'center' }}>
-              잘못 놓았다면 지도의 물건을 탭한 뒤 옮길 자리를 다시 탭하세요
+              잘못 놓았다면 지도에서 해당 표시를 탭한 뒤 옮길 자리를 다시 탭하세요
             </p>
           </div>
 
@@ -1340,7 +1381,7 @@
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b28 · team 6';
+    const APP_BUILD = 'b29 · shield store';
     const UPDATE_CHECK_MS = 60000;
 
     function App() {
