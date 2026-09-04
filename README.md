@@ -1,7 +1,7 @@
 # 미션 1 · 정찰 매핑 앱
 
 서울로봇인공지능과학관 극한환경 탐사 미션 — 미션 1(바퀴형 로봇 정찰)의
-데이터 매핑 웹앱. 5팀이 태블릿으로 각 구역 데이터를 입력하면 실시간
+데이터 매핑 웹앱. 6팀이 태블릿으로 각 구역 데이터를 입력하면 실시간
 동기화되고, 강사 화면에서 히트맵으로 볼 수 있음.
 
 > 프로젝트 전체 맥락은 `PROJECT_CONTEXT.md` 참고.
@@ -73,7 +73,7 @@ Realtime Database → 규칙:
 ### 태블릿 배정
 | 기기 | URL |
 |---|---|
-| 1~5팀 | `.../mission1-mapping/#/team/1` ~ `/team/5` |
+| 1~6팀 | `.../mission1-mapping/#/team/1` ~ `/team/6` |
 | 강사 | `.../mission1-mapping/#/admin` |
 
 ---
@@ -82,7 +82,7 @@ Realtime Database → 규칙:
 
 ```
 mission1_v1/
-  {teamId}/           # 1~5
+  {teamId}/           # 1~6
     {zoneCode}/       # α1, α2, ... δ3
       radiation: "3.5"
       temp: "45"
