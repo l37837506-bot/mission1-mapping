@@ -708,6 +708,7 @@
       { id: 3, name: '3팀', color: '#a855f7', deep: '#7c3aed' },
       { id: 4, name: '4팀', color: '#3b82f6', deep: '#2563eb' },
       { id: 5, name: '5팀', color: '#22c55e', deep: '#16a34a' },
+      { id: 6, name: '6팀', color: '#22d3ee', deep: '#0891b2' },
     ];
 
     // ============ Firebase REST API 헬퍼 ============
@@ -796,7 +797,9 @@
       const h = window.location.hash.slice(1);
       if (h.startsWith('/team/')) {
         const id = parseInt(h.slice(6), 10);
-        if (id >= 1 && id <= 5) return { view: 'team', teamId: id };
+        // 팀 수를 TEAMS에서 가져온다. 상수로 박아두면 팀을 늘렸을 때
+        // 주소가 조용히 홈으로 떨어진다.
+        if (TEAMS.some(t => t.id === id)) return { view: 'team', teamId: id };
       }
       if (h === '/admin') return { view: 'admin' };
       return { view: 'home' };
@@ -1337,7 +1340,7 @@
 
     // ============ 메인 앱 ============
     // 배포 식별용. index.html을 고쳐 배포할 때마다 갱신할 것 (캐시 판별용)
-    const APP_BUILD = 'b27 · hq icon';
+    const APP_BUILD = 'b28 · team 6';
     const UPDATE_CHECK_MS = 60000;
 
     function App() {
